@@ -1,0 +1,2 @@
+<?php namespace App\Models; use Illuminate\Database\Eloquent\Model;
+class Customer extends Model { protected $table='Rental_kendaraan_customer'; protected $primaryKey='id_customer'; public function getRouteKeyName(){return $this->primaryKey;} protected $fillable=['nama','email','no_hp','password','ktp_path','status_verifikasi']; protected $hidden=['password']; public function pemesanans(){return $this->hasMany(Pemesanan::class,'id_customer','id_customer');} }
