@@ -3,9 +3,9 @@
 @section('title', 'Sistem Penyewaan Kendaraan')
 
 @section('content')
-    <section class="card" style="padding: clamp(24px, 6vw, 60px); background: linear-gradient(120deg, #fff, #eaf2ff)">
-        <span class="tag">Pemesanan kendaraan online</span>
 
+    <section class="card" style="padding: clamp(24px, 6vw, 60px); background: linear-gradient(145deg, var(--app-panel), var(--app-bg)); border: 1px solid var(--app-border);">       
+        <span class="tag">Pemesanan kendaraan online</span>
         <h1 style="margin-top: 14px">
             Perjalanan lebih mudah,<br>
             kendaraan pilihanmu.

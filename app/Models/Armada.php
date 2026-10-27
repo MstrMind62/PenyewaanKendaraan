@@ -4,7 +4,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Armada extends Model { 
     
-    protected $table = 'armada'; 
+    protected $table = 'Rental_kendaraan_armada';
     
     
     public $timestamps = false;
