@@ -1,5 +1,5 @@
 
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'Dashboard Admin')
 
@@ -829,7 +829,7 @@
                 <div class="guide-step">
                     <div class="step-number">04</div>
                     <div>
-                        <h4>Perbarui status pesanan</h4>
+                       <h4>Perbarui status pesanan</h4>
                         <p>Sesuaikan status dengan kondisi sebenarnya, lalu klik Simpan Perubahan.</p>
                     </div>
                 </div>

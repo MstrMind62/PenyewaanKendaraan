@@ -1,13 +1,18 @@
-
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'Kelola Armada')
+@section('page-heading', 'Kelola Armada')
 
 @section('content')
-    <h1>Kelola Armada</h1>
+    <div class="page-heading">
+        <div>
+            <h1>Kelola Armada</h1>
+            <p>Tambahkan dan pantau kendaraan yang tersedia untuk disewakan.</p>
+        </div>
+        <span class="badge">{{ $armadas->count() }} kendaraan</span>
+    </div>
 
-    {{-- Form tambah armada --}}
-    <div class="card" style="margin: 18px 0;">
+    <div class="panel">
         <h2>Tambah Armada</h2>
 
         <form method="POST" action="{{ route('admin.armada.store') }}">
@@ -17,32 +22,34 @@
                 <div class="field">
                     <label for="nama_kendaraan">Nama kendaraan</label>
                     <input
-                        type="text"
                         id="nama_kendaraan"
                         name="nama_kendaraan"
+                        value="{{ old('nama_kendaraan') }}"
                         required
+                        maxlength="120"
                     >
                 </div>
 
                 <div class="field">
-                    <label for="tipe">Tipe</label>
+                    <label for="tipe">Tipe kendaraan</label>
                     <select id="tipe" name="tipe" required>
-                        <option value="Mobil">Mobil</option>
-                        <option value="Motor">Motor</option>
-                        <option value="Bus">Bus</option>
-                        <option value="HiAce">HiAce</option>
-                        <option value="Lainnya">Lainnya</option>
+                        @foreach (['Mobil', 'Motor', 'Bus', 'HiAce', 'Lainnya'] as $tipe)
+                            <option value="{{ $tipe }}" @selected(old('tipe') === $tipe)>
+                                {{ $tipe }}
+                            </option>
+                        @endforeach
                     </select>
                 </div>
 
                 <div class="field">
                     <label for="harga_sewa">Harga sewa per hari (Rp)</label>
                     <input
-                        type="number"
                         id="harga_sewa"
+                        type="number"
                         name="harga_sewa"
                         min="0"
                         step="1000"
+                        value="{{ old('harga_sewa') }}"
                         required
                     >
                 </div>
@@ -50,9 +57,9 @@
                 <div class="field">
                     <label for="transmisi">Transmisi</label>
                     <input
-                        type="text"
                         id="transmisi"
                         name="transmisi"
+                        value="{{ old('transmisi') }}"
                         placeholder="Manual / Automatic"
                     >
                 </div>
@@ -60,19 +67,15 @@
                 <div class="field">
                     <label for="plat_nomor">Plat nomor</label>
                     <input
-                        type="text"
                         id="plat_nomor"
                         name="plat_nomor"
+                        value="{{ old('plat_nomor') }}"
                     >
                 </div>
 
                 <div class="field">
                     <label for="status_ketersediaan">Status</label>
-                    <select
-                        id="status_ketersediaan"
-                        name="status_ketersediaan"
-                        required
-                    >
+                    <select id="status_ketersediaan" name="status_ketersediaan" required>
                         <option value="tersedia">Tersedia</option>
                         <option value="disewa">Disewa</option>
                         <option value="perawatan">Perawatan</option>
@@ -80,34 +83,48 @@
                 </div>
             </div>
 
-            <button type="submit">Tambah Armada</button>
+            <div class="form-actions">
+                <button class="btn" type="submit">＋ Tambah Armada</button>
+            </div>
         </form>
     </div>
 
-    {{-- Tabel daftar armada --}}
+    <div class="page-heading">
+        <div>
+            <h1 style="font-size: 20px">Daftar Kendaraan</h1>
+            <p>Data armada yang tersimpan dalam sistem.</p>
+        </div>
+    </div>
+
     <div class="table-wrap">
         <table>
             <thead>
                 <tr>
-                    <th>Nama</th>
+                    <th>Nama kendaraan</th>
                     <th>Tipe</th>
                     <th>Harga/hari</th>
-                    <th>Plat</th>
+                    <th>Plat nomor</th>
                     <th>Status</th>
                     <th>Aksi</th>
                 </tr>
             </thead>
-
             <tbody>
                 @forelse ($armadas as $a)
                     <tr>
-                        <td>{{ $a->nama_kendaraan }}</td>
-                        <td>{{ $a->tipe }}</td>
                         <td>
-                            Rp{{ number_format($a->harga_sewa, 0, ',', '.') }}
+                            <strong>{{ $a->nama_kendaraan }}</strong>
+                            <div class="muted" style="font-size: 11px; margin-top: 4px">
+                                ID #{{ $a->id_armada }}
+                            </div>
                         </td>
-                        <td>{{ $a->plat_nomor ?: '-' }}</td>
-                        <td>{{ ucfirst($a->status_ketersediaan) }}</td>
+                        <td>{{ $a->tipe }}</td>
+                        <td>Rp{{ number_format($a->harga_sewa, 0, ',', '.') }}</td>
+                        <td>{{ $a->plat_nomor ?: '—' }}</td>
+                        <td>
+                            <span class="badge">
+                                {{ ucfirst($a->status_ketersediaan) }}
+                            </span>
+                        </td>
                         <td>
                             <form
                                 method="POST"
@@ -116,16 +133,17 @@
                             >
                                 @csrf
                                 @method('DELETE')
-
-                                <button type="submit" class="danger">
-                                    Hapus
-                                </button>
+                                <button class="btn-danger" type="submit">Hapus</button>
                             </form>
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6">Belum ada data armada.</td>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                Belum ada data armada. Gunakan form di atas untuk menambahkan kendaraan.
+                            </div>
+                        </td>
                     </tr>
                 @endforelse
             </tbody>

@@ -13,7 +13,8 @@
 
                 <h2 style="margin: 12px 0 4px">{{ $a->nama_kendaraan }}</h2>
 
-                <p class="muted">Tipe: {{ $a->tipe }} · Transmisi: {{ $a->transmisi ?: '-' }}</p>
+                <p class="muted">Tipe: {{ $a->tipe }} 
+                    · Transmisi: {{ $a->transmisi ?: '-' }}</p>
                 <p class="muted">Plat: {{ $a->plat_nomor ?: 'Belum dicatat' }}</p>
 
                 <p class="price">
