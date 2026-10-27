@@ -18,7 +18,7 @@ class RentalController extends Controller
     public function home()
     {
         $armadas = Armada::where('status_ketersediaan', 'tersedia')
-            ->latest()
+            ->orderBy('id_armada', 'desc')
             ->take(6)
             ->get();
 
@@ -163,8 +163,7 @@ class RentalController extends Controller
             ->route('customer.orders')
             ->with(
                 'success',
-                'Pemesanan tersimpan. Silakan tunggu verifikasi pembayaran. Nomor pesanan #'
-                    . $p->id_pemesanan
+                'Pemesanan tersimpan. Silakan tunggu verifikasi pembayaran. Nomor pesanan #' . $p->id_pemesanan
             );
     }
 
@@ -174,11 +173,12 @@ class RentalController extends Controller
 
         $orders = Pemesanan::with(['armada', 'sopir', 'pembayaran'])
             ->where('id_customer', session('user_id'))
-            ->latest()
+            ->orderBy('id_pemesanan', 'desc')
             ->get();
 
         return view('pemesanan.index', compact('orders'));
     }
+
     // Menampilkan halaman login Admin
     public function adminLoginForm()
     {
@@ -203,10 +203,8 @@ class RentalController extends Controller
                 ->onlyInput('email');
         }
 
-        // Perbarui ID sesi setelah autentikasi berhasil.
         $request->session()->regenerate();
 
-        // Gunakan session yang sama dengan pemeriksaan di dashboard Admin.
         $request->session()->put([
             'user_id' => $admin->id_admin,
             'user_name' => $admin->nama,
@@ -224,6 +222,7 @@ class RentalController extends Controller
 
         return redirect()->route('admin.login');
     }
+
     public function cancelBooking(Pemesanan $p)
     {
         abort_unless(
@@ -252,8 +251,9 @@ class RentalController extends Controller
             'pesanan' => Pemesanan::count(),
             'menunggu' => Pemesanan::where('status', 'Menunggu Pembayaran')->count(),
         ];
+        
         $orders = Pemesanan::with(['customer', 'armada', 'sopir', 'pembayaran'])
-            ->latest()
+            ->orderBy('id_pemesanan', 'desc')
             ->take(12)
             ->get();
 
@@ -264,7 +264,7 @@ class RentalController extends Controller
     {
         abort_unless(session('role') === 'admin', 403);
 
-        $armadas = Armada::latest()->get();
+        $armadas = Armada::orderBy('id_armada', 'desc')->get();
 
         return view('admin.armada', compact('armadas'));
     }
@@ -337,7 +337,7 @@ class RentalController extends Controller
     {
         abort_unless(session('role') === 'admin', 403);
 
-        $sopirs = Sopir::latest()->get();
+        $sopirs = Sopir::orderBy('id_sopir', 'desc')->get();
 
         return view('admin.sopir', compact('sopirs'));
     }
