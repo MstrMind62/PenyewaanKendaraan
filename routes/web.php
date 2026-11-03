@@ -1,10 +1,5 @@
 <?php
 
-<<<<<<< HEAD
-use App\Http\Controllers\ArmadaController;
-
-Route::get('/armada', [ArmadaController::class, 'index']);
-=======
 use App\Http\Controllers\RentalController;
 use App\Http\Controllers\SupirController;
 use Illuminate\Support\Facades\Route;
@@ -61,4 +56,3 @@ Route::prefix('supir')->name('supir.')->group(function () {
     Route::get('/tugas/{p}', [SupirController::class, 'showTask'])->name('tugas.detail');
     Route::patch('/tugas/{p}/status', [SupirController::class, 'updateTaskStatus'])->name('tugas.status');
 });
->>>>>>> 02e1f13f5272f8f264ae52707d599f57b8d485a5
