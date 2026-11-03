@@ -41,6 +41,7 @@ Route::patch('/admin/pesanan/{p}', [RentalController::class, 'updateOrder'])->na
 Route::get('/admin/sopir', [RentalController::class, 'drivers'])->name('admin.sopir');
 Route::post('/admin/sopir', [RentalController::class, 'saveDriver'])->name('admin.sopir.store');
 Route::delete('/admin/sopir/{sopir}', [RentalController::class, 'deleteDriver'])->name('admin.sopir.delete');
+Route::get('/admin/laporan', [RentalController::class, 'rentalReports'])->name('admin.laporan');
 
 Route::prefix('supir')->name('supir.')->group(function () {
     Route::get('/login', [SupirController::class, 'loginForm'])->name('login');
@@ -50,4 +51,7 @@ Route::prefix('supir')->name('supir.')->group(function () {
     Route::get('/tugas', [SupirController::class, 'tasks'])->name('tugas');
     Route::get('/tugas/{p}', [SupirController::class, 'showTask'])->name('tugas.detail');
     Route::patch('/tugas/{p}/status', [SupirController::class, 'updateTaskStatus'])->name('tugas.status');
+
+
+    
 });

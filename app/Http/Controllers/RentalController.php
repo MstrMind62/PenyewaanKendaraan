@@ -74,6 +74,7 @@ class RentalController extends Controller
                     'user_name' => $a->nama,
                     'role' => 'admin',
                 ]);
+
                 $r->session()->regenerate();
 
                 return redirect()->route('admin.dashboard');
@@ -93,6 +94,7 @@ class RentalController extends Controller
             'user_name' => $c->nama,
             'role' => 'customer',
         ]);
+
         $r->session()->regenerate();
 
         return redirect()
@@ -135,7 +137,9 @@ class RentalController extends Controller
         ]);
 
         if ($armada->status_ketersediaan !== 'tersedia') {
-            return back()->withErrors(['armada' => 'Armada sedang tidak tersedia.']);
+            return back()->withErrors([
+                'armada' => 'Armada sedang tidak tersedia.'
+            ]);
         }
 
         $p = DB::transaction(function () use ($d, $armada) {
@@ -229,7 +233,9 @@ class RentalController extends Controller
 
         if (!Hash::check($data['password_lama'], $customer->password)) {
             return back()
-                ->withErrors(['password_lama' => 'Password lama yang kamu masukkan tidak sesuai.'], 'password')
+                ->withErrors([
+                    'password_lama' => 'Password lama yang kamu masukkan tidak sesuai.'
+                ], 'password')
                 ->withInput();
         }
 
@@ -326,7 +332,7 @@ class RentalController extends Controller
             'pesanan' => Pemesanan::count(),
             'menunggu' => Pemesanan::where('status', 'Menunggu Pembayaran')->count(),
         ];
-        
+
         $orders = Pemesanan::with(['customer', 'armada', 'sopir', 'pembayaran'])
             ->orderBy('id_pemesanan', 'desc')
             ->take(12)
@@ -474,6 +480,7 @@ class RentalController extends Controller
         }
 
         $pembayaran = $p->pembayaran;
+
         if (!$pembayaran) {
             return back()->withErrors([
                 'pembayaran' => 'Data pembayaran untuk pesanan ini tidak ditemukan. Hubungi admin.',
@@ -489,5 +496,75 @@ class RentalController extends Controller
             'success',
             'Metode pembayaran diperbarui. Sistem ini masih menggunakan simulasi pembayaran.'
         );
+    }
+
+    // =========================================
+    // LAPORAN PENYEWAAN
+    // =========================================
+    public function rentalReports(Request $request)
+    {
+        abort_unless(session('role') === 'admin', 403);
+
+        // Validasi filter laporan
+        $filters = $request->validate([
+            'tanggal_mulai' => 'nullable|date',
+            'tanggal_selesai' => 'nullable|date|after_or_equal:tanggal_mulai',
+            'status' => 'nullable|in:Menunggu Pembayaran,Menunggu Konfirmasi,Dikonfirmasi,Dalam Perjalanan,Selesai,Dibatalkan',
+        ]);
+
+        // Query data pemesanan beserta relasinya
+        $query = Pemesanan::with([
+            'customer',
+            'armada',
+            'sopir',
+            'pembayaran',
+        ]);
+
+        // Filter berdasarkan tanggal mulai
+        if (!empty($filters['tanggal_mulai'])) {
+            $query->whereDate('tanggal_sewa', '>=', $filters['tanggal_mulai']);
+        }
+
+        // Filter berdasarkan tanggal selesai
+        if (!empty($filters['tanggal_selesai'])) {
+            $query->whereDate('tanggal_sewa', '<=', $filters['tanggal_selesai']);
+        }
+
+        // Filter berdasarkan status pemesanan
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        $orders = $query->orderBy('id_pemesanan', 'desc')->get();
+
+        // Total pemesanan sesuai filter
+        $totalPemesanan = $orders->count();
+
+        // Total pendapatan dari pembayaran yang sudah dibayar
+        $totalPendapatan = $orders
+            ->filter(function ($order) {
+                return $order->pembayaran
+                    && $order->pembayaran->status_pembayaran === 'Dibayar';
+            })
+            ->sum('total_biaya');
+
+        // Pemesanan yang sedang berjalan
+        $pemesananAktif = $orders
+            ->whereIn('status', ['Dikonfirmasi', 'Dalam Perjalanan'])
+            ->count();
+
+        // Pemesanan yang masih menunggu
+        $pemesananMenunggu = $orders
+            ->whereIn('status', ['Menunggu Pembayaran', 'Menunggu Konfirmasi'])
+            ->count();
+
+        return view('admin.laporan', compact(
+            'orders',
+            'filters',
+            'totalPemesanan',
+            'totalPendapatan',
+            'pemesananAktif',
+            'pemesananMenunggu'
+        ));
     }
 }
