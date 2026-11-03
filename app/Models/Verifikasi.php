@@ -1,0 +1,2 @@
+<?php namespace App\Models; use Illuminate\Database\Eloquent\Model;
+class Verifikasi extends Model { protected $table='Rental_kendaraan_verifikasi'; protected $primaryKey='id_verifikasi'; public function getRouteKeyName(){return $this->primaryKey;} protected $fillable=['id_customer','kode_verifikasi','status']; public function customer(){return $this->belongsTo(Customer::class,'id_customer','id_customer');} }
