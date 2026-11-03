@@ -23,6 +23,11 @@ Route::post('/admin/logout', [RentalController::class, 'adminLogout'])
     ->name('admin.logout');
 
 Route::get('/armada', [RentalController::class, 'armadas'])->name('armada.index');
+
+// --- RUTE BARU DITAMBAHKAN DI SINI ---
+Route::view('/armada/pilihan', 'armada.pilihan')->name('armada.pilihan');
+// ------------------------------------
+
 Route::get('/armada/{armada}/pesan', [RentalController::class, 'createBookingForm'])->name('booking.create');
 Route::post('/armada/{armada}/pesan', [RentalController::class, 'storeBooking'])->name('booking.store');
 Route::get('/profil-saya', [RentalController::class, 'customerProfile'])->name('customer.profile');

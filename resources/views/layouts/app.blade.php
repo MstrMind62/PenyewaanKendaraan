@@ -143,32 +143,33 @@
                 </a>
 
                 <nav class="site-nav">
-    <a href="{{ route('armada.index') }}">Armada</a>
+                    <a href="{{ route('armada.index') }}">Armada</a>
+                    {{-- Tombol Jenis yang mengarah ke file pilihan.blade.php --}}
+                    <a href="{{ route('armada.pilihan') }}">Jenis</a>
 
-    {{-- Cek jika yang login adalah customer --}}
-    @if(session('role') === 'customer')
-        <a href="{{ route('customer.orders') }}">Pesanan Saya</a>
-        <a href="{{ route('customer.profile') }}">Profil Saya</a>
-        <form method="POST" action="{{ route('logout') }}" style="display: inline-block;">
-            @csrf
-            {{-- Menggunakan class "danger" bawaan CSS Anda agar tombol berwarna merah --}}
-            <button type="submit" class="danger" style="padding: 10px 15px;">
-                Logout ({{ session('user_name') }})
-            </button>
-        </form>
+                    {{-- Cek jika yang login adalah customer --}}
+                    @if(session('role') === 'customer')
+                        <a href="{{ route('customer.orders') }}">Pesanan Saya</a>
+                        <a href="{{ route('customer.profile') }}">Profil Saya</a>
+                        <form method="POST" action="{{ route('logout') }}" style="display: inline-block;">
+                            @csrf
+                            <button type="submit" class="danger" style="padding: 10px 15px;">
+                                Logout ({{ session('user_name') }})
+                            </button>
+                        </form>
 
-    {{-- Cek jika yang login kebetulan admin (akses nyasar) --}}
-    @elseif(session('role') === 'admin')
-        <a href="{{ route('admin.dashboard') }}">Dashboard Admin</a>
+                    {{-- Cek jika yang login kebetulan admin (akses nyasar) --}}
+                    @elseif(session('role') === 'admin')
+                        <a href="{{ route('admin.dashboard') }}">Dashboard Admin</a>
 
-    {{-- Tampilan untuk pengunjung yang belum login --}}
-    @else
-        <a href="{{ route('login') }}">Login</a>
-        <a href="{{ route('register') }}" class="site-register">
-            Daftar
-        </a>
-    @endif
-</nav>
+                    {{-- Tampilan untuk pengunjung yang belum login --}}
+                    @else
+                        <a href="{{ route('login') }}">Login</a>
+                        <a href="{{ route('register') }}" class="site-register">
+                            Daftar
+                        </a>
+                    @endif
+                </nav>
             </div>
         </header>
     @endunless
