@@ -167,6 +167,81 @@ class RentalController extends Controller
             );
     }
 
+    /**
+     * Menampilkan profil customer yang sedang login.
+     */
+    public function customerProfile()
+    {
+        abort_unless(session('role') === 'customer', 403);
+
+        $customer = Customer::findOrFail(session('user_id'));
+
+        return view('customer.profil', compact('customer'));
+    }
+
+    /**
+     * Memperbarui informasi dasar customer.
+     */
+    public function updateCustomerProfile(Request $r)
+    {
+        abort_unless(session('role') === 'customer', 403);
+
+        $customer = Customer::findOrFail(session('user_id'));
+
+        $data = $r->validate([
+            'nama' => ['required', 'string', 'max:120'],
+            'email' => [
+                'required',
+                'email',
+                'max:150',
+                Rule::unique('Rental_kendaraan_customer', 'email')
+                    ->ignore($customer->id_customer, 'id_customer'),
+            ],
+            'no_hp' => ['required', 'string', 'max:25'],
+        ]);
+
+        $customer->update($data);
+
+        // Perbarui nama pada session agar navbar langsung menampilkan nama terbaru.
+        session(['user_name' => $customer->nama]);
+
+        return redirect()
+            ->route('customer.profile')
+            ->with('success', 'Informasi profil berhasil diperbarui.');
+    }
+
+    /**
+     * Mengubah password dengan memverifikasi password lama.
+     */
+    public function updateCustomerPassword(Request $r)
+    {
+        abort_unless(session('role') === 'customer', 403);
+
+        $customer = Customer::findOrFail(session('user_id'));
+
+        $data = $r->validate([
+            'password_lama' => ['required', 'string'],
+            'password_baru' => ['required', 'string', 'min:8', 'confirmed'],
+        ], [
+            'password_baru.min' => 'Password baru minimal 8 karakter.',
+            'password_baru.confirmed' => 'Konfirmasi password baru tidak sama.',
+        ]);
+
+        if (!Hash::check($data['password_lama'], $customer->password)) {
+            return back()
+                ->withErrors(['password_lama' => 'Password lama yang kamu masukkan tidak sesuai.'], 'password')
+                ->withInput();
+        }
+
+        $customer->update([
+            'password' => Hash::make($data['password_baru']),
+        ]);
+
+        return redirect()
+            ->route('customer.profile')
+            ->with('success_password', 'Password berhasil diperbarui.');
+    }
+
     public function customerOrders()
     {
         abort_unless(session('role') === 'customer', 403);
@@ -392,7 +467,20 @@ class RentalController extends Controller
             'metode_pembayaran' => 'required|in:Transfer Bank,E-Wallet,QRIS',
         ]);
 
-        $p->pembayaran()->update([
+        if ($p->status !== 'Menunggu Pembayaran') {
+            return back()->withErrors([
+                'pembayaran' => 'Metode pembayaran hanya dapat diubah saat pesanan menunggu pembayaran.',
+            ]);
+        }
+
+        $pembayaran = $p->pembayaran;
+        if (!$pembayaran) {
+            return back()->withErrors([
+                'pembayaran' => 'Data pembayaran untuk pesanan ini tidak ditemukan. Hubungi admin.',
+            ]);
+        }
+
+        $pembayaran->update([
             'metode_pembayaran' => $d['metode_pembayaran'],
             'status_pembayaran' => 'Menunggu',
         ]);

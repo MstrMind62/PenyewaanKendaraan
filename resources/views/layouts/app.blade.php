@@ -148,6 +148,7 @@
     {{-- Cek jika yang login adalah customer --}}
     @if(session('role') === 'customer')
         <a href="{{ route('customer.orders') }}">Pesanan Saya</a>
+        <a href="{{ route('customer.profile') }}">Profil Saya</a>
         <form method="POST" action="{{ route('logout') }}" style="display: inline-block;">
             @csrf
             {{-- Menggunakan class "danger" bawaan CSS Anda agar tombol berwarna merah --}}

@@ -35,9 +35,6 @@
                 </form>
             @endif
 
-            @if($o->status === 'Selesai' && $o->pembayaran && $o->pembayaran->status_pembayaran === 'Lunas')
-                <a class="btn" href="{{ route('booking.invoice', $o) }}">Cetak Invoice</a>
-            @endif
 
         </article>
     @empty

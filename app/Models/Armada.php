@@ -13,7 +13,7 @@ class Armada extends Model {
     public function getRouteKeyName() { return $this->primaryKey; } 
     
     
-    protected $fillable = ['nama_kendaraan','tipe','harga_sewa','transmisi','status_ketersediaan','plat_nomor','gambar', 'stock']; 
+    protected $fillable = ['nama_kendaraan','tipe','harga_sewa','transmisi','status_ketersediaan','plat_nomor','gambar']; 
     
     public function pemesanans() { 
         return $this->hasMany(Pemesanan::class,'id_armada','id_armada');

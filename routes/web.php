@@ -25,6 +25,10 @@ Route::post('/admin/logout', [RentalController::class, 'adminLogout'])
 Route::get('/armada', [RentalController::class, 'armadas'])->name('armada.index');
 Route::get('/armada/{armada}/pesan', [RentalController::class, 'createBookingForm'])->name('booking.create');
 Route::post('/armada/{armada}/pesan', [RentalController::class, 'storeBooking'])->name('booking.store');
+Route::get('/profil-saya', [RentalController::class, 'customerProfile'])->name('customer.profile');
+Route::put('/profil-saya', [RentalController::class, 'updateCustomerProfile'])->name('customer.profile.update');
+Route::put('/profil-saya/password', [RentalController::class, 'updateCustomerPassword'])->name('customer.password.update');
+
 Route::get('/pesanan-saya', [RentalController::class, 'customerOrders'])->name('customer.orders');
 Route::post('/pesanan/{p}/batal', [RentalController::class, 'cancelBooking'])->name('booking.cancel');
 Route::post('/pesanan/{p}/pembayaran', [RentalController::class, 'pay'])->name('booking.pay');
