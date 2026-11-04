@@ -15,7 +15,6 @@
         --dash-border: rgba(255,255,255,.09);
     }
 
-    /* Memastikan background seluruh halaman cocok dengan tema gelap */
     body {
         background-color: var(--dash-bg) !important;
         color: var(--dash-text) !important;
@@ -67,6 +66,7 @@
         border-radius: 16px;
         background: linear-gradient(145deg, rgba(20,35,48,.98), rgba(12,19,29,.98));
         transition: transform .2s, border-color .2s;
+        overflow: hidden;
     }
 
     .customer-armada .card:hover {
@@ -113,6 +113,7 @@
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        margin-bottom: 8px;
     }
 
     .customer-armada .tag.red {
@@ -175,8 +176,17 @@
 
     <div class="grid">
         @forelse($armadas as $a)
-            <article class="card">
-                {{-- Logika warna tag: hijau (teal) jika tersedia, merah jika disewa/perawatan --}}
+            @php
+                // Mengambil nama file gambar langsung dari kolom plat_nomor (sesuai struktur DB Anda)
+                $gambarMobil = $a->plat_nomor ?: 'alphard.png';
+            @endphp
+
+            <article class="card" style="padding-top: 0;">
+                {{-- Area Gambar Kendaraan --}}
+                <div style="margin: -24px -24px 16px -24px; height: 180px; background: #0c131d; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                    <img src="{{ asset('armada/' . $gambarMobil) }}" alt="{{ $a->nama_kendaraan }}" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+
                 <span class="tag {{ $a->status_ketersediaan === 'tersedia' ? '' : 'red' }}">
                     {{ $a->status_ketersediaan }}
                 </span>
@@ -185,7 +195,7 @@
 
                 <div class="specs muted">
                     <div>Tipe: {{ $a->tipe }} &nbsp;&middot;&nbsp; Transmisi: {{ $a->transmisi ?: '-' }}</div>
-                    <div>Plat: {{ $a->plat_nomor ?: 'Belum dicatat' }}</div>
+                    <div>Status: Tersedia</div>
                 </div>
 
                 <div class="price">

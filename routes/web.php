@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\RentalController;
 use App\Http\Controllers\SupirController;
+use App\Http\Controllers\ArmadaController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [RentalController::class, 'home'])->name('home');
@@ -13,14 +14,9 @@ Route::post('/login', [RentalController::class, 'login'])->name('login.store');
 Route::post('/logout', [RentalController::class, 'logout'])->name('logout');
 
 // Login dan logout Admin
-Route::get('/admin/login', [RentalController::class, 'adminLoginForm'])
-    ->name('admin.login');
-
-Route::post('/admin/login', [RentalController::class, 'adminLogin'])
-    ->name('admin.login.store');
-
-Route::post('/admin/logout', [RentalController::class, 'adminLogout'])
-    ->name('admin.logout');
+Route::get('/admin/login', [RentalController::class, 'adminLoginForm'])->name('admin.login');
+Route::post('/admin/login', [RentalController::class, 'adminLogin'])->name('admin.login.store');
+Route::post('/admin/logout', [RentalController::class, 'adminLogout'])->name('admin.logout');
 
 Route::get('/armada', [RentalController::class, 'armadas'])->name('armada.index');
 Route::get('/armada/{armada}/pesan', [RentalController::class, 'createBookingForm'])->name('booking.create');
