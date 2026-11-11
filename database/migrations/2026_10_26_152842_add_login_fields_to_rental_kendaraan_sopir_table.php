@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -8,17 +9,21 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('Rental_kendaraan_sopir', function (Blueprint $table) {
-            $table->string('email')->nullable()->unique();
-            $table->string('password')->nullable();
-        });
+        if (!Schema::hasColumn('Rental_kendaraan_sopir', 'email')) {
+            Schema::table('Rental_kendaraan_sopir', function (Blueprint $table) {
+                $table->string('email')->nullable()->unique();
+            });
+        }
+
+        if (!Schema::hasColumn('Rental_kendaraan_sopir', 'password')) {
+            Schema::table('Rental_kendaraan_sopir', function (Blueprint $table) {
+                $table->string('password')->nullable();
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('Rental_kendaraan_sopir', function (Blueprint $table) {
-            $table->dropUnique(['email']);
-            $table->dropColumn(['email', 'password']);
-        });
+        // Tidak menghapus kolom agar data lama tetap aman.
     }
 };

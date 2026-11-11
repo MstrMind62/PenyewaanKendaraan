@@ -1,13 +1,19 @@
 
-@extends('layouts.app')
+@extends('layouts.admin')
+
+@section('title', 'Laporan Penjualan')
+@section('page-heading', 'Laporan Penjualan')
 
 @section('content')
 
 <style>
+
+
 .report-container {
     max-width: 1200px;
     margin: 35px auto;
     padding: 0 20px;
+    color: #E2E8F0;
 }
 
 .report-header {
@@ -18,10 +24,11 @@
     font-size: 27px;
     font-weight: 700;
     margin-bottom: 7px;
+    color: #F1F5F9;
 }
 
 .report-header p {
-    color: #777;
+    color: #94A3B8;
 }
 
 .report-cards {
@@ -33,21 +40,23 @@
 
 .report-card,
 .report-section {
-    background: #fff;
-    border: 1px solid #eee;
+    background: #111827;
+    color: #E2E8F0;
+    border: 1px solid #263449;
     border-radius: 12px;
     padding: 20px;
-    box-shadow: 0 3px 12px rgba(0,0,0,.04);
+    box-shadow: 0 4px 14px rgba(0,0,0,.15);
 }
 
 .report-card small {
-    color: #777;
+    color: #94A3B8;
     display: block;
     margin-bottom: 12px;
 }
 
 .report-card h3 {
     font-size: 23px;
+    color: #60A5FA;
     margin: 0;
     font-weight: 700;
 }
@@ -59,6 +68,7 @@
 
 .report-section h3 {
     font-size: 18px;
+    color: #F1F5F9;
     margin-bottom: 20px;
     font-weight: 700;
 }
@@ -74,6 +84,7 @@
     display: block;
     font-size: 14px;
     font-weight: 600;
+    color: #CBD5E1;
     margin-bottom: 8px;
 }
 
@@ -81,9 +92,19 @@
 .filter-field select {
     width: 100%;
     padding: 11px;
-    border: 1px solid #ddd;
+    color: #E2E8F0;
+    background: #1E293B;
+    border: 1px solid #334155;
     border-radius: 8px;
     box-sizing: border-box;
+    color-scheme: dark;
+}
+
+.filter-field input:focus,
+.filter-field select:focus {
+    outline: none;
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 2px rgba(59,130,246,.2);
 }
 
 .report-button {
@@ -92,18 +113,24 @@
     border-radius: 8px;
     cursor: pointer;
     font-weight: 600;
-    background: #2563eb;
-    color: #fff;
+    background: #2563EB;
+    color: #F8FAFC;
+    transition: background .2s;
 }
 
 .report-button:hover {
-    background: #1d4ed8;
+    background: #1D4ED8;
 }
 
 .report-button.reset {
-    background: #64748b;
+    background: #334155;
+    color: #E2E8F0;
     text-decoration: none;
     display: inline-block;
+}
+
+.report-button.reset:hover {
+    background: #475569;
 }
 
 .report-table-wrapper {
@@ -114,19 +141,27 @@
     width: 100%;
     border-collapse: collapse;
     min-width: 900px;
+    color: #CBD5E1;
+    background: #111827;
 }
 
 .report-table th,
 .report-table td {
     padding: 13px;
     text-align: left;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #263449;
     font-size: 13px;
+    color: #CBD5E1;
 }
 
 .report-table th {
-    background: #f8fafc;
+    background: #1E293B;
+    color: #F1F5F9;
     font-weight: 700;
+}
+
+.report-table tbody tr:hover {
+    background: #1A2638;
 }
 
 .status {
@@ -134,23 +169,23 @@
     padding: 6px 10px;
     border-radius: 20px;
     font-size: 12px;
-    background: #e0e7ff;
-    color: #3730a3;
+    background: #1E3A8A;
+    color: #BFDBFE;
 }
 
 .status.selesai {
-    background: #dcfce7;
-    color: #166534;
+    background: #14532D;
+    color: #BBF7D0;
 }
 
 .status.batal {
-    background: #fee2e2;
-    color: #991b1b;
+    background: #7F1D1D;
+    color: #FECACA;
 }
 
 .status.menunggu {
-    background: #fef3c7;
-    color: #92400e;
+    background: #78350F;
+    color: #FDE68A;
 }
 
 .report-actions {
@@ -162,7 +197,7 @@
 .empty-report {
     text-align: center;
     padding: 35px;
-    color: #777;
+    color: #94A3B8;
 }
 
 @media(max-width: 900px) {
@@ -202,8 +237,26 @@
 
     body {
         background: #fff !important;
+        color: #111827 !important;
+    }
+
+    .report-card,
+    .report-section,
+    .report-table {
+        background: #fff !important;
+        color: #111827 !important;
+    }
+
+    .report-header h2,
+    .report-header p,
+    .report-section h3,
+    .report-table th,
+    .report-table td {
+        color: #111827 !important;
     }
 }
+
+
 </style>
 
 <div class="report-container">

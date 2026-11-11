@@ -22,6 +22,16 @@ Route::post('/admin/login', [RentalController::class, 'adminLogin'])
 Route::post('/admin/logout', [RentalController::class, 'adminLogout'])
     ->name('admin.logout');
 
+Route::patch(
+    '/admin/armada/{armada}/status',
+    [RentalController::class, 'updateArmadaStatus']
+)->name('admin.armada.status');
+
+Route::patch(
+    '/admin/armada/{armada}/stok',
+    [RentalController::class, 'updateArmadaStock']
+)->name('admin.armada.stock');
+
 Route::get('/armada', [RentalController::class, 'armadas'])->name('armada.index');
 Route::get('/armada/{armada}/pesan', [RentalController::class, 'createBookingForm'])->name('booking.create');
 Route::post('/armada/{armada}/pesan', [RentalController::class, 'storeBooking'])->name('booking.store');
