@@ -592,6 +592,22 @@
 
                 <nav class="side-nav">
                     <a
+    href="{{ route('admin.laporan') }}"
+    class="{{ request()->routeIs('admin.laporan*') ? 'active' : '' }}"
+>
+    <span class="nav-icon">▤</span>
+    <span class="nav-text">Laporan</span>
+</a>
+
+<a
+    href="{{ route('admin.laporan') }}"
+    class="{{ request()->routeIs('admin.laporan*') ? 'active' : '' }}"
+>
+    <span class="nav-icon">▤</span>
+    <span class="nav-text">Laporan Penjualan</span>
+</a>
+
+                    <a
                         href="{{ route('admin.dashboard') }}"
                         class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"
                     >

@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class RentalController extends Controller
 {
@@ -44,6 +45,8 @@ class RentalController extends Controller
 
         $c = Customer::create($d);
 
+        $r->session()->regenerate();
+
         session([
             'user_id' => $c->id_customer,
             'user_name' => $c->nama,
@@ -67,18 +70,18 @@ class RentalController extends Controller
             'password' => 'required|string',
         ]);
 
-        if ($a = Admin::where('email', $d['email'])->first()) {
-            if (Hash::check($d['password'], $a->password)) {
-                session([
-                    'user_id' => $a->id_admin,
-                    'user_name' => $a->nama,
-                    'role' => 'admin',
-                ]);
+        $a = Admin::where('email', $d['email'])->first();
 
-                $r->session()->regenerate();
+        if ($a && Hash::check($d['password'], $a->password)) {
+            $r->session()->regenerate();
 
-                return redirect()->route('admin.dashboard');
-            }
+            session([
+                'user_id' => $a->id_admin,
+                'user_name' => $a->nama,
+                'role' => 'admin',
+            ]);
+
+            return redirect()->route('admin.dashboard');
         }
 
         $c = Customer::where('email', $d['email'])->first();
@@ -89,13 +92,13 @@ class RentalController extends Controller
                 ->onlyInput('email');
         }
 
+        $r->session()->regenerate();
+
         session([
             'user_id' => $c->id_customer,
             'user_name' => $c->nama,
             'role' => 'customer',
         ]);
-
-        $r->session()->regenerate();
 
         return redirect()
             ->route('armada.index')
@@ -117,63 +120,203 @@ class RentalController extends Controller
         return view('armada.index', compact('armadas'));
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | FORM PEMESANAN
+    |--------------------------------------------------------------------------
+    */
+
     public function createBookingForm(Armada $armada)
     {
         abort_unless(session('role') === 'customer', 403);
 
-        return view('pemesanan.create', compact('armada'));
+        $tanggalMinimal = now()->addDay()->toDateString();
+        $tanggalMaksimal = now()->endOfMonth()->toDateString();
+
+        $jumlahTerpakai = DB::table('Rental_kendaraan_tanggal_pemesanan as tp')
+            ->join(
+                'Rental_kendaraan_pemesanan as p',
+                'p.id_pemesanan',
+                '=',
+                'tp.id_pemesanan'
+            )
+            ->where('p.id_armada', $armada->id_armada)
+            ->where('p.status', '!=', 'Dibatalkan')
+            ->whereBetween('tp.tanggal_sewa', [
+                now()->startOfMonth()->toDateString(),
+                $tanggalMaksimal,
+            ])
+            ->selectRaw('tp.tanggal_sewa, COUNT(*) as jumlah')
+            ->groupBy('tp.tanggal_sewa')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [
+                    $item->tanggal_sewa => (int) $item->jumlah,
+                ];
+            })
+            ->all();
+
+        return view('pemesanan.create', compact(
+            'armada',
+            'tanggalMinimal',
+            'tanggalMaksimal',
+            'jumlahTerpakai'
+        ));
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SIMPAN PEMESANAN
+    |--------------------------------------------------------------------------
+    */
 
     public function storeBooking(Request $r, Armada $armada)
     {
         abort_unless(session('role') === 'customer', 403);
 
+        $tanggalMaksimal = now()->endOfMonth()->toDateString();
+
         $d = $r->validate([
-            'tanggal_sewa' => 'required|date|after_or_equal:today',
-            'durasi' => 'required|integer|min:1|max:90',
+            'tanggal_sewa' => [
+                'required',
+                'array',
+                'min:1',
+                'max:31',
+            ],
+
+            'tanggal_sewa.*' => [
+                'required',
+                'date_format:Y-m-d',
+                'distinct',
+                'after:today',
+                'before_or_equal:' . $tanggalMaksimal,
+            ],
+
+            'durasi' => 'required|integer|min:1|max:31',
+
             'layanan' => 'required|in:ambil,diantar',
+
             'alamat_antar' => 'nullable|required_if:layanan,diantar|string|max:500',
+
             'metode_pembayaran' => 'required|in:Transfer Bank,E-Wallet,QRIS',
+        ], [
+            'tanggal_sewa.required' => 'Pilih tanggal sewa terlebih dahulu.',
+            'tanggal_sewa.*.after' => 'Setiap tanggal sewa harus setelah hari ini.',
+            'tanggal_sewa.*.before_or_equal' => 'Tanggal sewa harus berada pada bulan ini.',
+            'tanggal_sewa.*.distinct' => 'Tanggal yang sama tidak boleh dipilih dua kali.',
         ]);
 
-        if ($armada->status_ketersediaan !== 'tersedia') {
-            return back()->withErrors([
-                'armada' => 'Armada sedang tidak tersedia.'
-            ]);
+        $tanggalDipilih = collect($d['tanggal_sewa'])
+            ->unique()
+            ->sort()
+            ->values();
+
+        if ($tanggalDipilih->count() !== (int) $d['durasi']) {
+            return back()
+                ->withErrors([
+                    'tanggal_sewa' => 'Jumlah tanggal yang dipilih harus sama dengan durasi sewa.',
+                ])
+                ->withInput();
         }
 
-        $p = DB::transaction(function () use ($d, $armada) {
-            $p = Pemesanan::create([
+        $p = DB::transaction(function () use ($d, $armada, $tanggalDipilih) {
+            // Kunci data armada agar pemeriksaan stok tidak berbenturan
+            // dengan transaksi pemesanan lain.
+            $armadaTerkunci = Armada::where(
+                'id_armada',
+                $armada->id_armada
+            )
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if (
+                $armadaTerkunci->status_ketersediaan !== 'tersedia' ||
+                (int) $armadaTerkunci->stok < 1
+            ) {
+                throw ValidationException::withMessages([
+                    'armada' => 'Armada sedang tidak tersedia untuk dipesan.',
+                ]);
+            }
+
+            // Hitung jumlah kendaraan yang sudah dipesan pada setiap tanggal.
+            $terpakai = DB::table('Rental_kendaraan_tanggal_pemesanan as tp')
+                ->join(
+                    'Rental_kendaraan_pemesanan as p',
+                    'p.id_pemesanan',
+                    '=',
+                    'tp.id_pemesanan'
+                )
+                ->where('p.id_armada', $armadaTerkunci->id_armada)
+                ->where('p.status', '!=', 'Dibatalkan')
+                ->whereIn('tp.tanggal_sewa', $tanggalDipilih->all())
+                ->selectRaw('tp.tanggal_sewa, COUNT(*) as jumlah')
+                ->groupBy('tp.tanggal_sewa')
+                ->get()
+                ->mapWithKeys(function ($item) {
+                    return [
+                        $item->tanggal_sewa => (int) $item->jumlah,
+                    ];
+                });
+
+            // Pastikan stok tersedia pada semua tanggal yang dipilih.
+            foreach ($tanggalDipilih as $tanggal) {
+                $jumlah = (int) $terpakai->get($tanggal, 0);
+
+                if ($jumlah >= (int) $armadaTerkunci->stok) {
+                    throw ValidationException::withMessages([
+                        'tanggal_sewa' =>
+                            'Stok kendaraan sudah habis pada tanggal ' .
+                            \Carbon\Carbon::parse($tanggal)->format('d-m-Y') .
+                            '. Silakan pilih tanggal lain.',
+                    ]);
+                }
+            }
+
+            // Buat data pemesanan utama.
+            $pesanan = Pemesanan::create([
                 'id_customer' => session('user_id'),
-                'id_armada' => $armada->id_armada,
-                'tanggal_sewa' => $d['tanggal_sewa'],
-                'durasi' => $d['durasi'],
-                'total_biaya' => $armada->harga_sewa * $d['durasi'],
+                'id_armada' => $armadaTerkunci->id_armada,
+                'tanggal_sewa' => $tanggalDipilih->first(),
+                'durasi' => $tanggalDipilih->count(),
+                'total_biaya' =>
+                    $armadaTerkunci->harga_sewa * $tanggalDipilih->count(),
                 'layanan' => $d['layanan'],
                 'alamat_antar' => $d['alamat_antar'] ?? null,
                 'status' => 'Menunggu Pembayaran',
             ]);
 
+            // Simpan setiap tanggal sewa sebagai baris terpisah.
+            foreach ($tanggalDipilih as $tanggal) {
+                $pesanan->tanggalPemesanan()->create([
+                    'tanggal_sewa' => $tanggal,
+                ]);
+            }
+
+            // Buat data pembayaran.
             Pembayaran::create([
-                'id_pemesanan' => $p->id_pemesanan,
+                'id_pemesanan' => $pesanan->id_pemesanan,
                 'metode_pembayaran' => $d['metode_pembayaran'],
                 'status_pembayaran' => 'Menunggu',
             ]);
 
-            return $p;
+            return $pesanan;
         });
 
         return redirect()
             ->route('customer.orders')
             ->with(
                 'success',
-                'Pemesanan tersimpan. Silakan tunggu verifikasi pembayaran. Nomor pesanan #' . $p->id_pemesanan
+                'Pemesanan tersimpan. Silakan tunggu verifikasi pembayaran. Nomor pesanan #' .
+                $p->id_pemesanan
             );
     }
 
-    /**
-     * Menampilkan profil customer yang sedang login.
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | PROFIL CUSTOMER
+    |--------------------------------------------------------------------------
+    */
+
     public function customerProfile()
     {
         abort_unless(session('role') === 'customer', 403);
@@ -183,9 +326,6 @@ class RentalController extends Controller
         return view('customer.profil', compact('customer'));
     }
 
-    /**
-     * Memperbarui informasi dasar customer.
-     */
     public function updateCustomerProfile(Request $r)
     {
         abort_unless(session('role') === 'customer', 403);
@@ -206,17 +346,15 @@ class RentalController extends Controller
 
         $customer->update($data);
 
-        // Perbarui nama pada session agar navbar langsung menampilkan nama terbaru.
-        session(['user_name' => $customer->nama]);
+        session([
+            'user_name' => $customer->nama,
+        ]);
 
         return redirect()
             ->route('customer.profile')
             ->with('success', 'Informasi profil berhasil diperbarui.');
     }
 
-    /**
-     * Mengubah password dengan memverifikasi password lama.
-     */
     public function updateCustomerPassword(Request $r)
     {
         abort_unless(session('role') === 'customer', 403);
@@ -234,7 +372,7 @@ class RentalController extends Controller
         if (!Hash::check($data['password_lama'], $customer->password)) {
             return back()
                 ->withErrors([
-                    'password_lama' => 'Password lama yang kamu masukkan tidak sesuai.'
+                    'password_lama' => 'Password lama yang kamu masukkan tidak sesuai.',
                 ], 'password')
                 ->withInput();
         }
@@ -248,25 +386,17 @@ class RentalController extends Controller
             ->with('success_password', 'Password berhasil diperbarui.');
     }
 
-    public function customerOrders()
-    {
-        abort_unless(session('role') === 'customer', 403);
+    /*
+    |--------------------------------------------------------------------------
+    | LOGIN ADMIN
+    |--------------------------------------------------------------------------
+    */
 
-        $orders = Pemesanan::with(['armada', 'sopir', 'pembayaran'])
-            ->where('id_customer', session('user_id'))
-            ->orderBy('id_pemesanan', 'desc')
-            ->get();
-
-        return view('pemesanan.index', compact('orders'));
-    }
-
-    // Menampilkan halaman login Admin
     public function adminLoginForm()
     {
         return view('admin.login');
     }
 
-    // Memproses login Admin
     public function adminLogin(Request $request)
     {
         $credentials = $request->validate([
@@ -295,7 +425,6 @@ class RentalController extends Controller
         return redirect()->route('admin.dashboard');
     }
 
-    // Logout Admin
     public function adminLogout(Request $request)
     {
         $request->session()->invalidate();
@@ -304,23 +433,62 @@ class RentalController extends Controller
         return redirect()->route('admin.login');
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | PEMBATALAN PESANAN CUSTOMER
+    |--------------------------------------------------------------------------
+    */
+
     public function cancelBooking(Pemesanan $p)
     {
         abort_unless(
-            session('role') === 'customer' && $p->id_customer == session('user_id'),
+            session('role') === 'customer' &&
+            $p->id_customer == session('user_id'),
             403
         );
 
-        if (!in_array($p->status, ['Menunggu Pembayaran', 'Menunggu Konfirmasi'])) {
+        if (!in_array($p->status, [
+            'Menunggu Pembayaran',
+            'Menunggu Konfirmasi',
+        ])) {
             return back()->withErrors([
                 'status' => 'Pesanan yang sudah diproses tidak dapat dibatalkan.',
             ]);
         }
 
-        $p->update(['status' => 'Dibatalkan']);
+        DB::transaction(function () use ($p) {
+            Armada::where('id_armada', $p->id_armada)
+                ->lockForUpdate()
+                ->first();
 
-        return back()->with('success', 'Pesanan berhasil dibatalkan.');
+            $pesananTerkunci = Pemesanan::where(
+                'id_pemesanan',
+                $p->id_pemesanan
+            )
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if (in_array($pesananTerkunci->status, [
+                'Menunggu Pembayaran',
+                'Menunggu Konfirmasi',
+            ])) {
+                $pesananTerkunci->update([
+                    'status' => 'Dibatalkan',
+                ]);
+            }
+        });
+
+        return back()->with(
+            'success',
+            'Pesanan berhasil dibatalkan. Stok pada semua tanggal pilihan telah tersedia kembali.'
+        );
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | DASHBOARD ADMIN
+    |--------------------------------------------------------------------------
+    */
 
     public function dashboard()
     {
@@ -330,16 +498,30 @@ class RentalController extends Controller
             'armada' => Armada::count(),
             'customer' => Customer::count(),
             'pesanan' => Pemesanan::count(),
-            'menunggu' => Pemesanan::where('status', 'Menunggu Pembayaran')->count(),
+            'menunggu' => Pemesanan::where(
+                'status',
+                'Menunggu Pembayaran'
+            )->count(),
         ];
 
-        $orders = Pemesanan::with(['customer', 'armada', 'sopir', 'pembayaran'])
+        $orders = Pemesanan::with([
+            'customer',
+            'armada',
+            'sopir',
+            'pembayaran',
+        ])
             ->orderBy('id_pemesanan', 'desc')
             ->take(12)
             ->get();
 
         return view('admin.dashboard', compact('stats', 'orders'));
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | KELOLA ARMADA
+    |--------------------------------------------------------------------------
+    */
 
     public function adminArmadas()
     {
@@ -358,9 +540,9 @@ class RentalController extends Controller
             'nama_kendaraan' => 'required|string|max:120',
             'tipe' => 'required|string|max:50',
             'harga_sewa' => 'required|numeric|min:0',
+            'stok' => 'required|integer|min:1|max:1000',
             'transmisi' => 'nullable|string|max:40',
             'status_ketersediaan' => 'required|in:tersedia,disewa,perawatan',
-            'plat_nomor' => 'nullable|string|max:20|unique:Rental_kendaraan_armada,plat_nomor',
         ]);
 
         Armada::create($d);
@@ -383,36 +565,207 @@ class RentalController extends Controller
         return back()->with('success', 'Armada dihapus.');
     }
 
+    public function updateArmadaStock(Request $r, Armada $armada)
+    {
+        abort_unless(session('role') === 'admin', 403);
+
+        $data = $r->validate([
+            'stok' => ['required', 'integer', 'min:0', 'max:1000'],
+        ]);
+
+        DB::transaction(function () use ($armada, $data) {
+            $armadaTerkunci = Armada::where(
+                'id_armada',
+                $armada->id_armada
+            )
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $konflik = DB::table('Rental_kendaraan_tanggal_pemesanan as tp')
+                ->join(
+                    'Rental_kendaraan_pemesanan as p',
+                    'p.id_pemesanan',
+                    '=',
+                    'tp.id_pemesanan'
+                )
+                ->where('p.id_armada', $armadaTerkunci->id_armada)
+                ->where('p.status', '!=', 'Dibatalkan')
+                ->whereDate('tp.tanggal_sewa', '>=', now()->toDateString())
+                ->selectRaw('tp.tanggal_sewa, COUNT(*) as jumlah')
+                ->groupBy('tp.tanggal_sewa')
+                ->havingRaw('COUNT(*) > ?', [(int) $data['stok']])
+                ->orderBy('tp.tanggal_sewa')
+                ->first();
+
+            if ($konflik) {
+                throw ValidationException::withMessages([
+                    'stok' =>
+                        'Stok tidak dapat dikurangi menjadi ' . $data['stok'] .
+                        ' karena tanggal ' .
+                        \Carbon\Carbon::parse($konflik->tanggal_sewa)->format('d-m-Y') .
+                        ' sudah memiliki ' . $konflik->jumlah .
+                        ' pesanan aktif.',
+                ]);
+            }
+
+            $armadaTerkunci->update([
+                'stok' => (int) $data['stok'],
+            ]);
+        });
+
+        return back()->with(
+            'success',
+            'Stok armada berhasil diperbarui.'
+        );
+    }
+
+public function updateArmadaStatus(Request $r, Armada $armada)
+{
+    abort_unless(session('role') === 'admin', 403);
+
+    $data = $r->validate([
+        'status_ketersediaan' => [
+            'required',
+            'in:tersedia,disewa,perawatan',
+        ],
+    ]);
+
+    $armada->update([
+        'status_ketersediaan' => $data['status_ketersediaan'],
+    ]);
+
+    return back()->with(
+        'success',
+        'Status kendaraan berhasil diperbarui.'
+    );
+}
+
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE PESANAN OLEH ADMIN
+    |--------------------------------------------------------------------------
+    */
+
     public function updateOrder(Request $r, Pemesanan $p)
     {
         abort_unless(session('role') === 'admin', 403);
 
         $d = $r->validate([
-            'status' => 'required|in:Menunggu Pembayaran,Menunggu Konfirmasi,Dikonfirmasi,Dalam Perjalanan,Selesai,Dibatalkan',
-            'id_sopir' => 'nullable|exists:Rental_kendaraan_sopir,id_sopir',
-            'status_pembayaran' => 'nullable|in:Menunggu,Dibayar,Ditolak',
+            'status' => [
+                'required',
+                'in:Menunggu Pembayaran,Menunggu Konfirmasi,Dikonfirmasi,Dalam Perjalanan,Selesai,Dibatalkan',
+            ],
+
+            'id_sopir' => [
+                'nullable',
+                'exists:Rental_kendaraan_sopir,id_sopir',
+            ],
+
+            'status_pembayaran' => [
+                'nullable',
+                'in:Menunggu,Dibayar,Ditolak',
+            ],
         ]);
 
-        $p->update([
-            'status' => $d['status'],
-            'id_sopir' => $d['id_sopir'] ?? $p->id_sopir,
-        ]);
+        DB::transaction(function () use ($d, $p) {
+            // Kunci data armada.
+            $armada = Armada::where(
+                'id_armada',
+                $p->id_armada
+            )
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        if (isset($d['status_pembayaran'])) {
-            $pay = $p->pembayaran()->first();
+            // Ambil ulang data pesanan dengan row lock.
+            $pesanan = Pemesanan::where(
+                'id_pemesanan',
+                $p->id_pemesanan
+            )
+                ->lockForUpdate()
+                ->firstOrFail();
 
-            if ($pay) {
-                $pay->update([
-                    'status_pembayaran' => $d['status_pembayaran'],
-                    'tanggal_bayar' => $d['status_pembayaran'] === 'Dibayar'
-                        ? now()
-                        : $pay->tanggal_bayar,
-                ]);
+            // Jika pesanan dibatalkan lalu diaktifkan kembali,
+            // periksa ketersediaan stok pada setiap tanggal.
+            if (
+                $pesanan->status === 'Dibatalkan' &&
+                $d['status'] !== 'Dibatalkan'
+            ) {
+                $tanggalPesanan = DB::table(
+                    'Rental_kendaraan_tanggal_pemesanan'
+                )
+                    ->where('id_pemesanan', $pesanan->id_pemesanan)
+                    ->whereDate(
+                        'tanggal_sewa',
+                        '>=',
+                        now()->toDateString()
+                    )
+                    ->pluck('tanggal_sewa');
+
+                $terpakai = DB::table(
+                    'Rental_kendaraan_tanggal_pemesanan as tp'
+                )
+                    ->join(
+                        'Rental_kendaraan_pemesanan as p',
+                        'p.id_pemesanan',
+                        '=',
+                        'tp.id_pemesanan'
+                    )
+                    ->where('p.id_armada', $armada->id_armada)
+                    ->where('p.status', '!=', 'Dibatalkan')
+                    ->whereIn('tp.tanggal_sewa', $tanggalPesanan)
+                    ->selectRaw('tp.tanggal_sewa, COUNT(*) as jumlah')
+                    ->groupBy('tp.tanggal_sewa')
+                    ->get()
+                    ->keyBy('tanggal_sewa');
+
+                foreach ($tanggalPesanan as $tanggal) {
+                    $barisTerpakai = $terpakai->get($tanggal);
+                    $jumlahTerpakai = (int) ($barisTerpakai->jumlah ?? 0);
+
+                    if ($jumlahTerpakai >= (int) $armada->stok) {
+                        throw ValidationException::withMessages([
+                            'status' =>
+                                'Pesanan tidak dapat diaktifkan kembali karena stok kendaraan sudah penuh pada tanggal ' .
+                                \Carbon\Carbon::parse($tanggal)->format('d-m-Y') .
+                                '. Silakan periksa ketersediaan armada.',
+                        ]);
+                    }
+                }
             }
-        }
 
-        return back()->with('success', 'Pesanan diperbarui.');
+            // Perbarui status pesanan dan sopir.
+            $pesanan->update([
+                'status' => $d['status'],
+                'id_sopir' => $d['id_sopir'] ?? $pesanan->id_sopir,
+            ]);
+
+            // Perbarui status pembayaran jika dikirim dari form admin.
+            if (isset($d['status_pembayaran'])) {
+                $pembayaran = $pesanan->pembayaran()->first();
+
+                if ($pembayaran) {
+                    $pembayaran->update([
+                        'status_pembayaran' => $d['status_pembayaran'],
+                        'tanggal_bayar' =>
+                            $d['status_pembayaran'] === 'Dibayar'
+                                ? now()
+                                : $pembayaran->tanggal_bayar,
+                    ]);
+                }
+            }
+        });
+
+        return back()->with(
+            'success',
+            'Pesanan berhasil diperbarui.'
+        );
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | KELOLA SOPIR
+    |--------------------------------------------------------------------------
+    */
 
     public function drivers()
     {
@@ -442,6 +795,7 @@ class RentalController extends Controller
         ]);
 
         $d['password'] = Hash::make($d['password']);
+
         Sopir::create($d);
 
         return back()->with('success', 'Data sopir berhasil ditambahkan.');
@@ -451,7 +805,11 @@ class RentalController extends Controller
     {
         abort_unless(session('role') === 'admin', 403);
 
-        if ($sopir->pemesanans()->whereIn('status', ['Dikonfirmasi', 'Dalam Perjalanan'])->exists()) {
+        if (
+            $sopir->pemesanans()
+                ->whereIn('status', ['Dikonfirmasi', 'Dalam Perjalanan'])
+                ->exists()
+        ) {
             return back()->withErrors([
                 'sopir' => 'Sopir sedang bertugas dan tidak dapat dihapus.',
             ]);
@@ -462,10 +820,41 @@ class RentalController extends Controller
         return back()->with('success', 'Data sopir dihapus.');
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | PESANAN CUSTOMER
+    |--------------------------------------------------------------------------
+    | PENTING: customerOrders hanya boleh ada SATU KALI di controller ini.
+    */
+
+    public function customerOrders()
+    {
+        abort_unless(session('role') === 'customer', 403);
+
+        $orders = Pemesanan::with([
+            'armada',
+            'sopir',
+            'pembayaran',
+            'tanggalPemesanan',
+        ])
+            ->where('id_customer', session('user_id'))
+            ->orderBy('id_pemesanan', 'desc')
+            ->get();
+
+        return view('pemesanan.index', compact('orders'));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | PEMBAYARAN CUSTOMER
+    |--------------------------------------------------------------------------
+    */
+
     public function pay(Request $r, Pemesanan $p)
     {
         abort_unless(
-            session('role') === 'customer' && $p->id_customer == session('user_id'),
+            session('role') === 'customer' &&
+            $p->id_customer == session('user_id'),
             403
         );
 
@@ -498,64 +887,112 @@ class RentalController extends Controller
         );
     }
 
-    // =========================================
-    // LAPORAN PENYEWAAN
-    // =========================================
+    /*
+    |--------------------------------------------------------------------------
+    | LAPORAN PENYEWAAN
+    |--------------------------------------------------------------------------
+    */
+
     public function rentalReports(Request $request)
     {
         abort_unless(session('role') === 'admin', 403);
 
-        // Validasi filter laporan
         $filters = $request->validate([
             'tanggal_mulai' => 'nullable|date',
             'tanggal_selesai' => 'nullable|date|after_or_equal:tanggal_mulai',
             'status' => 'nullable|in:Menunggu Pembayaran,Menunggu Konfirmasi,Dikonfirmasi,Dalam Perjalanan,Selesai,Dibatalkan',
         ]);
 
-        // Query data pemesanan beserta relasinya
         $query = Pemesanan::with([
             'customer',
             'armada',
             'sopir',
             'pembayaran',
+            'tanggalPemesanan',
         ]);
 
-        // Filter berdasarkan tanggal mulai
-        if (!empty($filters['tanggal_mulai'])) {
-            $query->whereDate('tanggal_sewa', '>=', $filters['tanggal_mulai']);
+        // Filter tanggal menggunakan semua tanggal pilihan customer.
+        // Pesanan lama tanpa detail tanggal menggunakan tanggal_sewa utama.
+        if (
+            !empty($filters['tanggal_mulai']) ||
+            !empty($filters['tanggal_selesai'])
+        ) {
+            $tanggalMulai = $filters['tanggal_mulai'] ?? null;
+            $tanggalSelesai = $filters['tanggal_selesai'] ?? null;
+
+            $query->where(function ($q) use ($tanggalMulai, $tanggalSelesai) {
+                $q->whereHas(
+                    'tanggalPemesanan',
+                    function ($tanggalQuery) use ($tanggalMulai, $tanggalSelesai) {
+                        if ($tanggalMulai) {
+                            $tanggalQuery->whereDate(
+                                'tanggal_sewa',
+                                '>=',
+                                $tanggalMulai
+                            );
+                        }
+
+                        if ($tanggalSelesai) {
+                            $tanggalQuery->whereDate(
+                                'tanggal_sewa',
+                                '<=',
+                                $tanggalSelesai
+                            );
+                        }
+                    }
+                );
+
+                $q->orWhere(function ($legacyQuery) use (
+                    $tanggalMulai,
+                    $tanggalSelesai
+                ) {
+                    $legacyQuery->whereDoesntHave('tanggalPemesanan');
+
+                    if ($tanggalMulai) {
+                        $legacyQuery->whereDate(
+                            'tanggal_sewa',
+                            '>=',
+                            $tanggalMulai
+                        );
+                    }
+
+                    if ($tanggalSelesai) {
+                        $legacyQuery->whereDate(
+                            'tanggal_sewa',
+                            '<=',
+                            $tanggalSelesai
+                        );
+                    }
+                });
+            });
         }
 
-        // Filter berdasarkan tanggal selesai
-        if (!empty($filters['tanggal_selesai'])) {
-            $query->whereDate('tanggal_sewa', '<=', $filters['tanggal_selesai']);
-        }
-
-        // Filter berdasarkan status pemesanan
         if (!empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }
 
-        $orders = $query->orderBy('id_pemesanan', 'desc')->get();
+        $orders = $query
+            ->orderBy('id_pemesanan', 'desc')
+            ->get();
 
-        // Total pemesanan sesuai filter
         $totalPemesanan = $orders->count();
 
-        // Total pendapatan dari pembayaran yang sudah dibayar
         $totalPendapatan = $orders
             ->filter(function ($order) {
-                return $order->pembayaran
-                    && $order->pembayaran->status_pembayaran === 'Dibayar';
+                return $order->pembayaran &&
+                    $order->pembayaran->status_pembayaran === 'Dibayar';
             })
             ->sum('total_biaya');
 
-        // Pemesanan yang sedang berjalan
         $pemesananAktif = $orders
             ->whereIn('status', ['Dikonfirmasi', 'Dalam Perjalanan'])
             ->count();
 
-        // Pemesanan yang masih menunggu
         $pemesananMenunggu = $orders
-            ->whereIn('status', ['Menunggu Pembayaran', 'Menunggu Konfirmasi'])
+            ->whereIn('status', [
+                'Menunggu Pembayaran',
+                'Menunggu Konfirmasi',
+            ])
             ->count();
 
         return view('admin.laporan', compact(
