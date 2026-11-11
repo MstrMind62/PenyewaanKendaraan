@@ -1,3 +1,4 @@
+
 @extends('layouts.app')
 
 @section('title', 'Daftar Armada')
@@ -10,207 +11,300 @@
         --dash-panel-2: #142330;
         --dash-teal: #42d6c5;
         --dash-red: #8b2935;
-        --dash-text: #f4f7fb;
-        --dash-muted: #a2adbb;
-        --dash-border: rgba(255,255,255,.09);
+        --dash-text: #f1f5f9;
+        --dash-muted: #94a3b8;
     }
 
-    /* Memastikan background seluruh halaman cocok dengan tema gelap */
-    body {
-        background-color: var(--dash-bg) !important;
-        color: var(--dash-text) !important;
-    }
-
-    .customer-armada {
+    .armada-container {
+        min-height: 100vh;
+        padding: 35px 5%;
+        background: var(--dash-bg);
         color: var(--dash-text);
-        font-family: 'DM Sans', 'Segoe UI', sans-serif;
-        padding: 20px 0;
     }
 
-    .customer-armada * {
-        box-sizing: border-box;
-    }
-
-    .customer-armada .muted {
-        color: var(--dash-muted);
-    }
-
-    .customer-armada .page-header {
+    .armada-header {
         margin-bottom: 30px;
     }
 
-    .customer-armada .page-header h1 {
-        margin: 0 0 8px;
-        font-size: clamp(24px, 4vw, 32px);
-        font-weight: 800;
-        letter-spacing: -0.5px;
+    .armada-header h1 {
+        font-size: 30px;
+        font-weight: 700;
+        margin-bottom: 8px;
     }
 
-    .customer-armada .page-header p {
-        margin: 0;
-        font-size: 14px;
-        line-height: 1.6;
-    }
-
-    .customer-armada .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 20px;
-    }
-
-    .customer-armada .card {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        padding: 24px;
-        border: 1px solid var(--dash-border);
-        border-radius: 16px;
-        background: linear-gradient(145deg, rgba(20,35,48,.98), rgba(12,19,29,.98));
-        transition: transform .2s, border-color .2s;
-    }
-
-    .customer-armada .card:hover {
-        transform: translateY(-4px);
-        border-color: rgba(66,214,197,.35);
-    }
-
-    .customer-armada .card h2 {
-        margin: 16px 0 6px;
-        font-size: 20px;
-        font-weight: 800;
-        color: #fff;
-    }
-
-    .customer-armada .card .specs {
-        margin: 0 0 16px;
-        font-size: 13px;
-        line-height: 1.6;
-    }
-
-    .customer-armada .price {
-        margin: auto 0 20px;
-        padding-top: 16px;
-        border-top: 1px solid var(--dash-border);
-        color: var(--dash-teal);
-        font-size: 24px;
-        font-weight: 800;
-    }
-
-    .customer-armada .price small {
+    .armada-header p {
         color: var(--dash-muted);
-        font-size: 13px;
-        font-weight: 600;
+        font-size: 14px;
     }
 
-    .customer-armada .tag {
-        align-self: flex-start;
-        padding: 6px 12px;
-        border: 1px solid rgba(66,214,197,.2);
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 24px;
+    }
+
+    .vehicle-card {
+        background: var(--dash-panel);
+        border: 1px solid #263747;
+        border-radius: 14px;
+        overflow: hidden;
+        transition: 0.3s;
+    }
+
+    .vehicle-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--dash-teal);
+    }
+
+    .vehicle-image {
+        width: 100%;
+        height: 190px;
+        object-fit: contain;
+        background: #ffffff;
+        padding: 10px;
+    }
+
+    .vehicle-content {
+        padding: 18px;
+    }
+
+    .vehicle-name {
+        font-size: 19px;
+        font-weight: 700;
+        margin-bottom: 12px;
+    }
+
+    .vehicle-status {
+        display: inline-block;
+        padding: 5px 12px;
         border-radius: 20px;
-        background: rgba(66,214,197,.08);
-        color: var(--dash-teal);
-        font-size: 11px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .customer-armada .tag.red {
-        border-color: rgba(255,137,150,.2);
-        background: rgba(139,41,53,.17);
-        color: #ff9ba5;
-    }
-
-    .customer-armada .btn {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 100%;
-        min-height: 42px;
-        padding: 11px 17px;
-        border: 1px solid var(--dash-teal);
-        border-radius: 10px;
-        background: var(--dash-teal);
-        color: #071311;
-        font-size: 13px;
-        font-weight: 800;
-        text-decoration: none;
-        transition: .2s ease;
-        cursor: pointer;
-    }
-
-    .customer-armada .btn:hover {
-        transform: translateY(-2px);
-        filter: brightness(1.06);
-    }
-
-    .customer-armada .status-note {
-        display: block;
-        width: 100%;
-        padding: 12px;
-        border-radius: 10px;
-        background: rgba(255,255,255,.04);
-        border: 1px solid var(--dash-border);
-        text-align: center;
         font-size: 12px;
         font-weight: 600;
+        margin-bottom: 15px;
     }
 
-    .customer-armada .empty-state {
-        grid-column: 1 / -1;
-        padding: 50px 20px;
-        border: 1px dashed var(--dash-border);
-        border-radius: 16px;
-        text-align: center;
+    .status-available {
+        background: rgba(34, 197, 94, 0.15);
+        color: #4ade80;
+    }
+
+    .status-unavailable {
+        background: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+    }
+
+    .vehicle-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        font-size: 13px;
         color: var(--dash-muted);
-        background: rgba(255,255,255,.01);
+        gap: 10px;
+    }
+
+    .vehicle-info strong {
+        color: var(--dash-text);
+        text-align: right;
+    }
+
+    .vehicle-price {
+        border-top: 1px solid #263747;
+        margin-top: 15px;
+        padding-top: 15px;
+        margin-bottom: 15px;
+    }
+
+    .vehicle-price small {
+        color: var(--dash-muted);
+        font-size: 12px;
+    }
+
+    .vehicle-price h3 {
+        color: var(--dash-teal);
+        font-size: 21px;
+        margin-top: 4px;
+    }
+
+    .booking-button {
+        display: block;
+        width: 100%;
+        text-align: center;
+        padding: 11px;
+        border-radius: 8px;
+        background: var(--dash-teal);
+        color: #08111b;
+        font-weight: 700;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .booking-button:hover {
+        background: #2bb9aa;
+        color: #08111b;
+    }
+
+    .disabled-button {
+        display: block;
+        width: 100%;
+        padding: 11px;
+        text-align: center;
+        border-radius: 8px;
+        background: #374151;
+        color: #9ca3af;
+        font-weight: 600;
+        cursor: not-allowed;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 50px 20px;
+        color: var(--dash-muted);
+        background: var(--dash-panel);
+        border-radius: 12px;
+    }
+
+    @media (max-width: 600px) {
+        .armada-container {
+            padding: 25px 4%;
+        }
+
+        .armada-header h1 {
+            font-size: 24px;
+        }
     }
 </style>
 
-<div class="customer-armada">
-    <div class="page-header">
+<div class="armada-container">
+
+    <div class="armada-header">
         <h1>Daftar Armada</h1>
-        <p class="muted">Harga ditampilkan per hari. Ketersediaan akhir diperiksa saat pemesanan.</p>
+        <p>Pilih kendaraan yang sesuai dengan kebutuhan perjalanan Anda.</p>
     </div>
+
+    @if(session('success'))
+        <div style="background:#14532d; color:#bbf7d0; padding:12px 16px; border-radius:8px; margin-bottom:20px;">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div style="background:#7f1d1d; color:#fecaca; padding:12px 16px; border-radius:8px; margin-bottom:20px;">
+            {{ session('error') }}
+        </div>
+    @endif
 
     <div class="grid">
+
         @forelse($armadas as $a)
-            <article class="card">
-                {{-- Logika warna tag: hijau (teal) jika tersedia, merah jika disewa/perawatan --}}
-                <span class="tag {{ $a->status_ketersediaan === 'tersedia' ? '' : 'red' }}">
-                    {{ $a->status_ketersediaan }}
-                </span>
 
-                <h2>{{ $a->nama_kendaraan }}</h2>
+            <div class="vehicle-card">
 
-                <div class="specs muted">
-                    <div>Tipe: {{ $a->tipe }} &nbsp;&middot;&nbsp; Transmisi: {{ $a->transmisi ?: '-' }}</div>
-                    <div>Plat: {{ $a->plat_nomor ?: 'Belum dicatat' }}</div>
-                </div>
+                @if(!empty($a->gambar))
+                    <img
+                        class="vehicle-image"
+                        src="{{ $a->gambar }}"
+                        alt="{{ $a->nama_kendaraan }}"
+                        loading="lazy"
+                        referrerpolicy="no-referrer"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                    >
 
-                <div class="price">
-                    Rp{{ number_format($a->harga_sewa, 0, ',', '.') }}
-                    <small>/ hari</small>
-                </div>
-
-                @if($a->status_ketersediaan === 'tersedia')
-                    @if(session('role') === 'customer')
-                        <a class="btn" href="{{ route('booking.create', $a) }}">Pesan Kendaraan</a>
-                    @elseif(!session('role'))
-                        <a class="btn" href="{{ route('login') }}">Login untuk Memesan</a>
-                    @else
-                        <span class="status-note muted">Mode Admin Aktif</span>
-                    @endif
+                    <div
+                        class="vehicle-image"
+                        style="display:none; align-items:center; justify-content:center; color:#64748b;"
+                    >
+                        Gambar gagal dimuat
+                    </div>
                 @else
-                    <span class="status-note muted">Tidak Tersedia Saat Ini</span>
+                    <div
+                        class="vehicle-image"
+                        style="display:flex; align-items:center; justify-content:center; color:#64748b;"
+                    >
+                        Gambar belum tersedia
+                    </div>
                 @endif
-            </article>
+
+                <div class="vehicle-content">
+
+                    <h2 class="vehicle-name">
+                        {{ $a->nama_kendaraan }}
+                    </h2>
+
+                    @if(strtolower($a->status_ketersediaan) === 'tersedia')
+                        <span class="vehicle-status status-available">
+                            Tersedia
+                        </span>
+                    @else
+                        <span class="vehicle-status status-unavailable">
+                            Tidak Tersedia
+                        </span>
+                    @endif
+
+                    <div class="vehicle-info">
+                        <span>Tipe Kendaraan</span>
+                        <strong>{{ $a->tipe }}</strong>
+                    </div>
+
+                    <div class="vehicle-info">
+                        <span>Transmisi</span>
+                        <strong>{{ $a->transmisi }}</strong>
+                    </div>
+
+                    <div class="vehicle-info">
+                        <span>Plat Nomor</span>
+                        <strong>{{ $a->plat_nomor }}</strong>
+                    </div>
+
+                    <div class="vehicle-price">
+                        <small>Harga Sewa / Hari</small>
+                        <h3>
+                            Rp {{ number_format($a->harga_sewa, 0, ',', '.') }}
+                        </h3>
+                    </div>
+
+                    @if(strtolower($a->status_ketersediaan) === 'tersedia')
+
+                        @if(session('role') === 'customer')
+                            <a
+                                href="{{ route('booking.create', $a) }}"
+                                class="booking-button"
+                            >
+                                Pesan Sekarang
+                            </a>
+
+                        @elseif(session('role') === 'admin')
+                            <span class="disabled-button">
+                                Mode Admin
+                            </span>
+
+                        @else
+                            <a
+                                href="{{ route('login') }}"
+                                class="booking-button"
+                            >
+                                Login untuk Memesan
+                            </a>
+                        @endif
+
+                    @else
+                        <span class="disabled-button">
+                            Kendaraan Tidak Tersedia
+                        </span>
+                    @endif
+
+                </div>
+            </div>
+
         @empty
             <div class="empty-state">
-                <div style="font-size: 32px; margin-bottom: 12px; color: var(--dash-border);">▣</div>
-                Belum ada armada di database.<br>Admin dapat menambahkan armada melalui menu Kelola Armada.
+                <h3>Belum Ada Armada</h3>
+                <p>Data kendaraan belum tersedia.</p>
             </div>
         @endforelse
+
     </div>
+
 </div>
 @endsection
