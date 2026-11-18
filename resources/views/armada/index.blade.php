@@ -1,4 +1,3 @@
-
 @extends('layouts.app')
 
 @section('title', 'Daftar Armada')
@@ -23,7 +22,12 @@
     }
 
     .armada-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
         margin-bottom: 30px;
+        flex-wrap: wrap;
+        gap: 15px;
     }
 
     .armada-header h1 {
@@ -35,6 +39,24 @@
     .armada-header p {
         color: var(--dash-muted);
         font-size: 14px;
+        margin: 0;
+    }
+
+    /* Styling Filter Dropdown */
+    .filter-form select {
+        background: var(--dash-panel);
+        color: var(--dash-text);
+        border: 1px solid #263747;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        outline: none;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .filter-form select:focus {
+        border-color: var(--dash-teal);
     }
 
     .grid {
@@ -163,6 +185,7 @@
         color: var(--dash-muted);
         background: var(--dash-panel);
         border-radius: 12px;
+        grid-column: 1 / -1;
     }
 
     @media (max-width: 600px) {
@@ -179,8 +202,19 @@
 <div class="armada-container">
 
     <div class="armada-header">
-        <h1>Daftar Armada</h1>
-        <p>Pilih kendaraan yang sesuai dengan kebutuhan perjalanan Anda.</p>
+        <div>
+            <h1>Daftar Armada</h1>
+            <p>Pilih kendaraan yang sesuai dengan kebutuhan perjalanan Anda.</p>
+        </div>
+
+        <!-- Form Dropdown Filter Kategori -->
+        <form method="GET" action="{{ route('armada.index') }}" class="filter-form">
+            <select name="kategori" onchange="this.form.submit()">
+                <option value="">Semua Kategori</option>
+                <option value="Motor" {{ request('kategori') == 'Motor' ? 'selected' : '' }}>Kendaraan Motor</option>
+                <option value="Travel" {{ request('kategori') == 'Travel' ? 'selected' : '' }}>Kendaraan Travel / Mobil</option>
+            </select>
+        </form>
     </div>
 
     @if(session('success'))
@@ -300,7 +334,7 @@
         @empty
             <div class="empty-state">
                 <h3>Belum Ada Armada</h3>
-                <p>Data kendaraan belum tersedia.</p>
+                <p>Data kendaraan untuk kategori ini belum tersedia.</p>
             </div>
         @endforelse
 

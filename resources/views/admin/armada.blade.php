@@ -562,6 +562,19 @@
                     </select>
                 </div>
 
+                <div class="fleet-field span-2">
+                    <label>Link Gambar (Google Drive)</label>
+                    <input
+                        type="text"
+                        name="gambar"
+                        value="{{ old('gambar') }}"
+                        placeholder="Contoh: https://lh3.googleusercontent.com/d/..."
+                    >
+                    <small class="fleet-help">
+                        Tempel tautan langsung gambar dari Google Drive yang sudah disetel publik.
+                    </small>
+                </div>
+
             </div>
 
             <div class="fleet-form-footer">

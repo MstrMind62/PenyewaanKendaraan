@@ -1,4 +1,3 @@
-
 @extends('layouts.app')
 
 @section('title', 'Sistem Penyewaan Kendaraan')
@@ -36,52 +35,40 @@
             display: block;
             margin: 12px 0;
             border-radius: 12px;
-            background: rgba(255,255,255,.025);
+            background: #ffffff;
+            padding: 10px;
         }
     </style>
 
     <div class="grid">
         @forelse($armadas as $a)
 
-            @php
-                $nama = strtolower($a->nama_kendaraan);
-
-                $gambarMobil = [
-                    'alphard' => 'alphard.png',
-                    'avanza' => 'avanza.png',
-                    'brio' => 'brio.png',
-                    'rocky' => 'Daihatsu Rocky.png',
-                    'ertiga' => 'ertiga.png',
-                    'hiace' => 'hiace.png',
-                    'innova' => 'innova.png',
-                    'pajero' => 'pajero.png',
-                    'xenia' => 'xenia.png',
-                    'xpander' => 'xpander.png',
-                ];
-
-                $namaGambar = null;
-
-                foreach ($gambarMobil as $keyword => $file) {
-                    if (str_contains($nama, $keyword)) {
-                        $namaGambar = $file;
-                        break;
-                    }
-                }
-            @endphp
-
             <article class="card">
 
                 <span class="tag">{{ $a->tipe }}</span>
 
-                @if($namaGambar)
+                {{-- Menampilkan gambar secara dinamis dari link database (Google Drive) --}}
+                @if(!empty($a->gambar))
                     <img
-                    src="{{ asset('images/armada/alphard.png') }}"
-                    alt="Alphard"
-                    style="width:100%; height:190px; object-fit:contain;"
+                        class="home-armada-image"
+                        src="{{ $a->gambar }}"
+                        alt="{{ $a->nama_kendaraan }}"
+                        loading="lazy"
+                        referrerpolicy="no-referrer"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
                     >
+
+                    <div
+                        class="home-armada-image"
+                        style="display:none; align-items:center; justify-content:center; color:#64748b;"
+                    >
+                        Gambar gagal dimuat
+                    </div>
                 @else
-                    <div class="home-armada-image"
-                         style="display:flex; align-items:center; justify-content:center; color:var(--app-muted, #999);">
+                    <div
+                        class="home-armada-image"
+                        style="display:flex; align-items:center; justify-content:center; color:#64748b;"
+                    >
                         Gambar belum tersedia
                     </div>
                 @endif

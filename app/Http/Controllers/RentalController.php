@@ -532,23 +532,7 @@ class RentalController extends Controller
         return view('admin.armada', compact('armadas'));
     }
 
-    public function saveArmada(Request $r)
-    {
-        abort_unless(session('role') === 'admin', 403);
-
-        $d = $r->validate([
-            'nama_kendaraan' => 'required|string|max:120',
-            'tipe' => 'required|string|max:50',
-            'harga_sewa' => 'required|numeric|min:0',
-            'stok' => 'required|integer|min:1|max:1000',
-            'transmisi' => 'nullable|string|max:40',
-            'status_ketersediaan' => 'required|in:tersedia,disewa,perawatan',
-        ]);
-
-        Armada::create($d);
-
-        return back()->with('success', 'Data armada berhasil ditambahkan.');
-    }
+    
 
     public function deleteArmada(Armada $armada)
     {
@@ -887,11 +871,6 @@ public function updateArmadaStatus(Request $r, Armada $armada)
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | LAPORAN PENYEWAAN
-    |--------------------------------------------------------------------------
-    */
 
     public function rentalReports(Request $request)
     {
