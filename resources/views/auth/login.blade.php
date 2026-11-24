@@ -4,160 +4,192 @@
 
 @section('content')
 <style>
-    /* Reset & Fullscreen Container */
-    .login-fullscreen {
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        width: 100vw; height: 100vh;
+    /* Container Login */
+    .login-page {
+        min-height: 75vh;
         display: flex;
-        z-index: 1000;
-        font-family: 'DM Sans', "Segoe UI", Arial, sans-serif;
-        background: #0d1014; /* Warna dasar gelap */
-        color: #ffffff;
+        align-items: center;
+        justify-content: center;
+        padding: 45px 20px;
+        background: #fafafa;
     }
 
-    /* ===============================
-       BAGIAN KIRI (Teks & Visual)
-       =============================== */
-    .login-left {
-        flex: 1;
+    .login-container {
+        width: 100%;
+        max-width: 1000px;
+        min-height: 570px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        background: #ffffff;
+        border: 1px solid #eeeeee;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 12px 35px rgba(0,0,0,.06);
+    }
+
+    /* Bagian Kiri */
+    .login-visual {
         position: relative;
-        padding: 60px;
         display: flex;
         flex-direction: column;
         justify-content: center;
-        background: radial-gradient(circle at 30% 50%, #1e242c 0%, #11151a 80%);
-        border-right: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 55px;
+        background: linear-gradient(145deg, #fff5ec, #ffead9);
+        overflow: hidden;
     }
 
-    .brand-logo {
+    .login-brand {
         position: absolute;
-        top: 50px;
-        left: 60px;
-        font-size: 20px;
-        font-weight: 700;
-        color: #ffffff;
+        top: 35px;
+        left: 40px;
+        color: #292929;
+        font-size: 19px;
+        font-weight: 800;
         text-decoration: none;
-        letter-spacing: -0.5px;
+        letter-spacing: -.5px;
     }
 
-    .brand-logo span {
-        color: #95dfc3; /* Warna teal/mint sesuai gambar */
+    .login-brand span {
+        color: #f07828;
     }
 
-    .left-content {
-        max-width: 500px;
+    .visual-content {
+        position: relative;
+        z-index: 2;
     }
 
-    .control-tag {
+    .visual-tag {
         display: inline-block;
-        color: #95dfc3;
+        margin-bottom: 18px;
+        padding: 7px 12px;
+        border-radius: 20px;
+        background: #ffffff;
+        color: #e87525;
         font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 1.5px;
+        font-weight: 800;
+        letter-spacing: 1px;
         text-transform: uppercase;
-        margin-bottom: 20px;
     }
 
-    .left-content h1 {
-        font-size: 52px;
-        font-weight: 700;
-        line-height: 1.1;
-        letter-spacing: -1.5px;
-        margin: 0 0 20px 0;
-        color: #ffffff;
+    .visual-content h1 {
+        margin: 0 0 18px;
+        color: #292929;
+        font-size: 39px;
+        font-weight: 850;
+        line-height: 1.2;
+        letter-spacing: -1.3px;
     }
 
-    .left-content p {
-        font-size: 14px;
-        line-height: 1.7;
-        color: #8b949e;
+    .visual-content p {
+        max-width: 350px;
         margin: 0;
-        max-width: 400px;
+        color: #777777;
+        font-size: 14px;
+        line-height: 1.8;
     }
 
-    .left-footer {
+    .visual-decoration {
         position: absolute;
-        bottom: 50px;
-        left: 60px;
-        font-size: 12px;
-        color: #586069;
+        width: 230px;
+        height: 230px;
+        right: -65px;
+        bottom: -75px;
+        border: 35px solid rgba(240,120,40,.12);
+        border-radius: 50%;
     }
 
-    /* ===============================
-       BAGIAN KANAN (Form Login)
-       =============================== */
-    .login-right {
-        flex: 1;
+    .visual-decoration::before {
+        content: "";
+        position: absolute;
+        width: 100px;
+        height: 100px;
+        left: -110px;
+        top: -150px;
+        border: 20px solid rgba(240,120,40,.10);
+        border-radius: 50%;
+    }
+
+    .visual-footer {
+        position: absolute;
+        bottom: 28px;
+        left: 40px;
+        color: #a18c7d;
+        font-size: 11px;
+    }
+
+    /* Bagian Kanan */
+    .login-form-section {
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #0d1014;
-        padding: 40px;
+        padding: 45px;
+        background: #ffffff;
     }
 
-    .form-wrapper {
+    .login-form {
         width: 100%;
-        max-width: 380px;
+        max-width: 350px;
     }
 
     .form-icon {
-        width: 54px;
-        height: 54px;
-        background: #95dfc3;
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #0d1014;
-        font-size: 24px;
-        font-weight: 800;
-        margin-bottom: 35px;
-    }
-
-    .form-wrapper h2 {
-        font-size: 26px;
-        font-weight: 700;
-        margin: 0 0 10px 0;
-        color: #ffffff;
-        letter-spacing: -0.5px;
-    }
-
-    .form-wrapper p {
-        font-size: 13px;
-        color: #8b949e;
-        margin: 0 0 35px 0;
-    }
-
-    /* Alert / Notifikasi */
-    .login-alert {
-        padding: 12px 15px;
-        border-radius: 8px;
-        font-size: 12px;
+        width: 52px;
+        height: 52px;
+        display: grid;
+        place-items: center;
         margin-bottom: 25px;
-    }
-    .login-alert.error {
-        background: rgba(220, 53, 69, 0.1);
-        border: 1px solid rgba(220, 53, 69, 0.2);
-        color: #ffc1c1;
-    }
-    .login-alert.success {
-        background: rgba(149, 223, 195, 0.1);
-        border: 1px solid rgba(149, 223, 195, 0.2);
-        color: #95dfc3;
+        border-radius: 13px;
+        background: #fff0e6;
+        color: #f07828;
+        font-size: 24px;
+        font-weight: 850;
     }
 
-    /* Input Fields */
+    .login-form h2 {
+        margin: 0 0 8px;
+        color: #292929;
+        font-size: 27px;
+        font-weight: 800;
+    }
+
+    .form-subtitle {
+        margin: 0 0 28px;
+        color: #888888;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    /* Alert */
+    .login-alert {
+        padding: 12px 14px;
+        border-radius: 9px;
+        margin-bottom: 19px;
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+    .login-alert.error {
+        background: #fff0f0;
+        border: 1px solid #f4cccc;
+        color: #c03939;
+    }
+
+    .login-alert.success {
+        background: #eaf8ef;
+        border: 1px solid #c9ecd5;
+        color: #218653;
+    }
+
+    /* Input */
     .input-group {
-        margin-bottom: 22px;
+        margin-bottom: 19px;
     }
 
     .input-group label {
         display: block;
-        font-size: 12px;
-        font-weight: 600;
-        color: #c9d1d9;
         margin-bottom: 8px;
+        color: #444444;
+        font-size: 13px;
+        font-weight: 700;
     }
 
     .input-wrap {
@@ -166,220 +198,282 @@
 
     .input-field {
         width: 100%;
-        height: 48px;
-        padding: 0 16px;
-        background: #121519;
-        border: 1px solid #242b33;
-        border-radius: 8px;
-        color: #ffffff;
+        height: 47px;
+        padding: 0 14px;
+        border: 1px solid #dddddd;
+        border-radius: 9px;
+        background: #ffffff;
+        color: #292929;
         font-family: inherit;
         font-size: 13px;
         outline: none;
-        transition: 0.2s;
+        transition: .2s;
     }
 
     .input-field:focus {
-        border-color: #95dfc3;
-        background: #161a20;
+        border-color: #f07828;
+        box-shadow: 0 0 0 3px rgba(240,120,40,.12);
     }
 
     .input-field::placeholder {
-        color: #4b535d;
+        color: #aaaaaa;
+    }
+
+    .password-field {
+        padding-right: 85px;
     }
 
     .toggle-pw {
         position: absolute;
-        right: 15px;
         top: 50%;
+        right: 13px;
         transform: translateY(-50%);
-        background: none;
         border: none;
-        color: #8b949e;
+        background: none;
+        color: #e87525;
         font-size: 11px;
-        font-weight: 700;
+        font-weight: 800;
         cursor: pointer;
     }
 
     .toggle-pw:hover {
-        color: #95dfc3;
+        color: #c75b16;
     }
 
-    /* Tombol Submit */
+    /* Tombol Login */
     .btn-submit {
         width: 100%;
         height: 48px;
-        background: #95dfc3;
-        color: #0d1014;
-        border: none;
-        border-radius: 8px;
-        font-size: 14px;
-        font-weight: 700;
-        cursor: pointer;
-        transition: 0.2s;
-        margin-top: 10px;
+        margin-top: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 8px;
+        border: none;
+        border-radius: 9px;
+        background: #f07828;
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: .2s;
     }
 
     .btn-submit:hover {
-        filter: brightness(1.1);
+        background: #dc6418;
         transform: translateY(-1px);
     }
 
-    .back-link {
-        display: block;
+    .login-links {
+        margin-top: 23px;
         text-align: center;
-        margin-top: 25px;
-        color: #8b949e;
+    }
+
+    .login-links a {
+        display: block;
+        margin-top: 12px;
+        color: #888888;
         font-size: 12px;
         text-decoration: none;
-        transition: 0.2s;
+        transition: .2s;
     }
 
-    .back-link:hover {
-        color: #ffffff;
+    .login-links a:hover {
+        color: #f07828;
     }
 
-    /* Responsive untuk Layar Kecil (Mobile) */
-    @media (max-width: 900px) {
-        .login-fullscreen {
-            flex-direction: column;
-            overflow-y: auto;
+    .login-links a.register-link {
+        color: #f07828;
+        font-weight: 750;
+    }
+
+    /* Responsive */
+    @media(max-width: 750px) {
+        .login-page {
+            padding: 25px 15px;
         }
-        .login-left {
-            flex: none;
-            padding: 40px 30px;
-            min-height: 45vh;
-            border-right: none;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+        .login-container {
+            grid-template-columns: 1fr;
+            min-height: auto;
         }
-        .brand-logo {
-            top: 30px; left: 30px;
+
+        .login-visual {
+            min-height: 240px;
+            padding: 65px 30px 35px;
         }
-        .left-footer {
-            display: none; /* Sembunyikan footer di mobile agar tidak sempit */
+
+        .login-brand {
+            top: 22px;
+            left: 30px;
         }
-        .left-content h1 {
-            font-size: 36px;
+
+        .visual-content h1 {
+            font-size: 30px;
         }
-        .login-right {
-            flex: none;
-            padding: 40px 30px;
-            min-height: 55vh;
+
+        .visual-footer {
+            display: none;
+        }
+
+        .login-form-section {
+            padding: 35px 25px;
         }
     }
 </style>
 
-<div class="login-fullscreen">
-    
-    {{-- BAGIAN KIRI: Visual & Teks --}}
-    <div class="login-left">
-        <a href="{{ route('home') }}" class="brand-logo">
-            SewaKendaraan<span>.</span>
-        </a>
+<div class="login-page">
 
-        <div class="left-content">
-            <span class="control-tag">Customer Portal</span>
-            <h1>Sewa kendaraan.<br>Dalam satu tempat.</h1>
-            <p>Pusat layanan untuk memilih armada, menentukan durasi, dan memantau status pesanan Anda dengan lebih teratur.</p>
-        </div>
+    <div class="login-container">
 
-        <div class="left-footer">
-            © {{ date('Y') }} SewaKendaraan · Customer Area
-        </div>
-    </div>
+        {{-- Bagian Visual --}}
+        <div class="login-visual">
 
-    {{-- BAGIAN KANAN: Form --}}
-    <div class="login-right">
-        <div class="form-wrapper">
-            
-            <div class="form-icon">S</div>
-
-            <h2>Selamat datang</h2>
-            <p>Masuk menggunakan akun customer untuk melanjutkan.</p>
-
-            {{-- Menampilkan Error --}}
-            @if ($errors->any())
-                <div class="login-alert error">
-                    @foreach ($errors->all() as $error)
-                        <div>{{ $error }}</div>
-                    @endforeach
-                </div>
-            @endif
-
-            {{-- Menampilkan Sukses --}}
-            @if (session('success'))
-                <div class="login-alert success">
-                    {{ session('success') }}
-                </div>
-            @endif
-
-            <form method="POST" action="{{ route('login.store') }}">
-                @csrf
-
-                <div class="input-group">
-                    <label for="email">Email Customer</label>
-                    <div class="input-wrap">
-                        <input 
-                            type="email" 
-                            id="email" 
-                            name="email" 
-                            class="input-field" 
-                            placeholder="nama@domain.com" 
-                            value="{{ old('email') }}" 
-                            required 
-                            autofocus
-                        >
-                    </div>
-                </div>
-
-                <div class="input-group">
-                    <label for="password">Password</label>
-                    <div class="input-wrap">
-                        <input 
-                            type="password" 
-                            id="password" 
-                            name="password" 
-                            class="input-field" 
-                            placeholder="Masukkan password" 
-                            required
-                        >
-                        <button type="button" class="toggle-pw" id="togglePassword">Lihat</button>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn-submit">
-                    Masuk ke Dashboard &rarr;
-                </button>
-            </form>
-
-            <a href="{{ route('home') }}" class="back-link">
-                &larr; Kembali ke website utama
-            </a>
-            
-            <a href="{{ route('register') }}" class="back-link" style="margin-top: 10px; color: #95dfc3;">
-                Belum punya akun? Daftar
+            <a href="{{ route('home') }}" class="login-brand">
+                SewaKendaraan<span>.</span>
             </a>
 
+            <div class="visual-content">
+                <span class="visual-tag">Customer Portal</span>
+
+                <h1>Sewa kendaraan.<br>Lebih mudah.</h1>
+
+                <p>
+                    Temukan kendaraan yang sesuai kebutuhanmu,
+                    atur jadwal penyewaan, dan pantau pesanan
+                    dalam satu tempat.
+                </p>
+            </div>
+
+            <div class="visual-decoration"></div>
+
+            <div class="visual-footer">
+                © {{ date('Y') }} SewaKendaraan · Customer Area
+            </div>
+
         </div>
+
+        {{-- Bagian Form Login --}}
+        <div class="login-form-section">
+
+            <div class="login-form">
+
+                <div class="form-icon">S</div>
+
+                <h2>Selamat Datang!</h2>
+
+                <p class="form-subtitle">
+                    Masuk menggunakan akun customer untuk melanjutkan.
+                </p>
+
+                {{-- Notifikasi Error --}}
+                @if ($errors->any())
+                    <div class="login-alert error">
+                        @foreach ($errors->all() as $error)
+                            <div>{{ $error }}</div>
+                        @endforeach
+                    </div>
+                @endif
+
+                {{-- Notifikasi Sukses --}}
+                @if (session('success'))
+                    <div class="login-alert success">
+                        {{ session('success') }}
+                    </div>
+                @endif
+
+                <form method="POST" action="{{ route('login.store') }}">
+                    @csrf
+
+                    <div class="input-group">
+                        <label for="email">Email Customer</label>
+
+                        <div class="input-wrap">
+                            <input
+                                type="email"
+                                id="email"
+                                name="email"
+                                class="input-field"
+                                placeholder="nama@domain.com"
+                                value="{{ old('email') }}"
+                                required
+                                autofocus
+                            >
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="password">Password</label>
+
+                        <div class="input-wrap">
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                class="input-field password-field"
+                                placeholder="Masukkan password"
+                                autocomplete="current-password"
+                                required
+                            >
+
+                            <button
+                                type="button"
+                                class="toggle-pw"
+                                id="togglePassword"
+                            >
+                                Lihat
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit">
+                        Masuk ke Dashboard →
+                    </button>
+
+                </form>
+
+                <div class="login-links">
+
+                    <a href="{{ route('home') }}">
+                        ← Kembali ke website utama
+                    </a>
+
+                    <a href="{{ route('register') }}" class="register-link">
+                        Belum punya akun? Daftar sekarang
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
 
 </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+
         const password = document.getElementById('password');
         const toggle = document.getElementById('togglePassword');
-        
+
         if (password && toggle) {
+
             toggle.addEventListener('click', function () {
+
                 const isHidden = password.type === 'password';
+
                 password.type = isHidden ? 'text' : 'password';
-                toggle.textContent = isHidden ? 'Sembunyikan' : 'Lihat';
+
+                toggle.textContent = isHidden
+                    ? 'Sembunyikan'
+                    : 'Lihat';
+
             });
+
         }
+
     });
 </script>
 @endsection

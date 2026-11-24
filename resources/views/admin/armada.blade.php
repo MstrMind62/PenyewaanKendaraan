@@ -98,16 +98,6 @@
         gap: 19px;
     }
 
-    .fleet-form-grid .span-2 {
-        grid-column: span 2;
-    }
-
-    @media (max-width: 600px) {
-        .fleet-form-grid .span-2 {
-            grid-column: span 1;
-        }
-    }
-
     .fleet-field {
         display: flex;
         flex-direction: column;
@@ -570,17 +560,6 @@
                         <option value="disewa">Disewa</option>
                         <option value="perawatan">Perawatan</option>
                     </select>
-                </div>
-
-                <div class="fleet-field">
-                    <label>Plat nomor</label>
-                    <input
-                        type="text"
-                        name="plat_nomor"
-                        value="{{ old('plat_nomor') }}"
-                        placeholder="Contoh: AB 1234 XY"
-                        maxlength="20"
-                    >
                 </div>
 
                 <div class="fleet-field span-2">

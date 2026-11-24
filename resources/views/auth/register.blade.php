@@ -1,179 +1,203 @@
-Tampilan halaman *Register* Anda sebelumnya masih menggunakan desain kotak lama. Agar 100% serasi dengan halaman *Login* modern (layar terbelah 50:50, tema gelap pekat, dan aksen *teal*/toska) yang baru saja kita buat, saya telah merombak ulang kodenya.
-
-Semua kolom *input* bawaan Anda (Nama, Email, No HP, Password, dan Konfirmasi) serta logika *error/success* tetap aman dan tidak ada yang dihilangkan.
-
-Silakan *copy* kode di bawah ini dan timpa seluruh isi file **`resources/views/auth/register.blade.php`** Anda:
-
-```blade
 @extends('layouts.app')
 
 @section('title', 'Daftar Akun')
 
 @section('content')
 <style>
-    /* Reset & Fullscreen Container */
-    .register-fullscreen {
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        width: 100vw; height: 100vh;
+    /* Container Register */
+    .register-page {
+        min-height: 75vh;
         display: flex;
-        z-index: 1000;
-        font-family: 'DM Sans', "Segoe UI", Arial, sans-serif;
-        background: #0d1014;
-        color: #ffffff;
-        overflow-y: auto;
+        align-items: center;
+        justify-content: center;
+        padding: 45px 20px;
+        background: #fafafa;
     }
 
-    /* ===============================
-       BAGIAN KIRI (Teks & Visual)
-       =============================== */
-    .register-left {
-        flex: 1;
+    .register-container {
+        width: 100%;
+        max-width: 1000px;
+        min-height: 650px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        background: #ffffff;
+        border: 1px solid #eeeeee;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 12px 35px rgba(0,0,0,.06);
+    }
+
+    /* Bagian Kiri */
+    .register-visual {
         position: relative;
-        padding: 60px;
         display: flex;
         flex-direction: column;
         justify-content: center;
-        background: radial-gradient(circle at 30% 50%, #1e242c 0%, #11151a 80%);
-        border-right: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 55px;
+        background: linear-gradient(145deg, #fff5ec, #ffead9);
+        overflow: hidden;
     }
 
-    .brand-logo {
+    .register-brand {
         position: absolute;
-        top: 50px;
-        left: 60px;
-        font-size: 20px;
-        font-weight: 700;
-        color: #ffffff;
+        top: 35px;
+        left: 40px;
+        color: #292929;
+        font-size: 19px;
+        font-weight: 800;
         text-decoration: none;
-        letter-spacing: -0.5px;
+        letter-spacing: -.5px;
     }
 
-    .brand-logo span {
-        color: #95dfc3;
+    .register-brand span {
+        color: #f07828;
     }
 
-    .left-content {
-        max-width: 500px;
+    .visual-content {
+        position: relative;
+        z-index: 2;
     }
 
-    .control-tag {
+    .visual-tag {
         display: inline-block;
-        color: #95dfc3;
+        margin-bottom: 18px;
+        padding: 7px 12px;
+        border-radius: 20px;
+        background: #ffffff;
+        color: #e87525;
         font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 1.5px;
+        font-weight: 800;
+        letter-spacing: 1px;
         text-transform: uppercase;
-        margin-bottom: 20px;
     }
 
-    .left-content h1 {
-        font-size: 52px;
-        font-weight: 700;
-        line-height: 1.1;
-        letter-spacing: -1.5px;
-        margin: 0 0 20px 0;
-        color: #ffffff;
+    .visual-content h1 {
+        margin: 0 0 18px;
+        color: #292929;
+        font-size: 39px;
+        font-weight: 850;
+        line-height: 1.2;
+        letter-spacing: -1.3px;
     }
 
-    .left-content p {
-        font-size: 14px;
-        line-height: 1.7;
-        color: #8b949e;
+    .visual-content p {
+        max-width: 350px;
         margin: 0;
-        max-width: 400px;
+        color: #777777;
+        font-size: 14px;
+        line-height: 1.8;
     }
 
-    .left-footer {
+    .visual-decoration {
         position: absolute;
-        bottom: 50px;
-        left: 60px;
-        font-size: 12px;
-        color: #586069;
+        width: 230px;
+        height: 230px;
+        right: -65px;
+        bottom: -75px;
+        border: 35px solid rgba(240,120,40,.12);
+        border-radius: 50%;
     }
 
-    /* ===============================
-       BAGIAN KANAN (Form Register)
-       =============================== */
-    .register-right {
-        flex: 1;
+    .visual-decoration::before {
+        content: "";
+        position: absolute;
+        width: 100px;
+        height: 100px;
+        left: -110px;
+        top: -150px;
+        border: 20px solid rgba(240,120,40,.10);
+        border-radius: 50%;
+    }
+
+    .visual-footer {
+        position: absolute;
+        bottom: 28px;
+        left: 40px;
+        color: #a18c7d;
+        font-size: 11px;
+    }
+
+    /* Bagian Kanan */
+    .register-form-section {
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #0d1014;
-        padding: 40px;
-        /* Tambahan agar form panjang bisa di-scroll dengan aman di desktop kecil */
-        overflow-y: auto; 
+        padding: 40px 45px;
+        background: #ffffff;
+        overflow-y: auto;
     }
 
-    .form-wrapper {
+    .register-form {
         width: 100%;
-        max-width: 380px;
-        margin: auto 0;
-        padding: 40px 0;
+        max-width: 350px;
+        margin: auto;
+        padding: 15px 0;
     }
 
     .form-icon {
-        width: 54px;
-        height: 54px;
-        background: #95dfc3;
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #0d1014;
-        font-size: 24px;
+        width: 52px;
+        height: 52px;
+        display: grid;
+        place-items: center;
+        margin-bottom: 22px;
+        border-radius: 13px;
+        background: #fff0e6;
+        color: #f07828;
+        font-size: 27px;
+        font-weight: 850;
+    }
+
+    .register-form h2 {
+        margin: 0 0 8px;
+        color: #292929;
+        font-size: 27px;
         font-weight: 800;
-        margin-bottom: 35px;
     }
 
-    .form-wrapper h2 {
-        font-size: 26px;
-        font-weight: 700;
-        margin: 0 0 10px 0;
-        color: #ffffff;
-        letter-spacing: -0.5px;
-    }
-
-    .form-wrapper p {
+    .form-subtitle {
+        margin: 0 0 24px;
+        color: #888888;
         font-size: 13px;
-        color: #8b949e;
-        margin: 0 0 30px 0;
+        line-height: 1.6;
     }
 
-    /* Alert / Notifikasi */
+    /* Alert */
     .register-alert {
-        padding: 12px 15px;
-        border-radius: 8px;
+        padding: 12px 14px;
+        border-radius: 9px;
+        margin-bottom: 17px;
         font-size: 12px;
-        margin-bottom: 25px;
+        line-height: 1.6;
     }
+
     .register-alert ul {
         margin: 0;
         padding-left: 18px;
     }
+
     .register-alert.error {
-        background: rgba(220, 53, 69, 0.1);
-        border: 1px solid rgba(220, 53, 69, 0.2);
-        color: #ffc1c1;
-    }
-    .register-alert.success {
-        background: rgba(149, 223, 195, 0.1);
-        border: 1px solid rgba(149, 223, 195, 0.2);
-        color: #95dfc3;
+        background: #fff0f0;
+        border: 1px solid #f4cccc;
+        color: #c03939;
     }
 
-    /* Input Fields */
+    .register-alert.success {
+        background: #eaf8ef;
+        border: 1px solid #c9ecd5;
+        color: #218653;
+    }
+
+    /* Input */
     .input-group {
-        margin-bottom: 18px;
+        margin-bottom: 15px;
     }
 
     .input-group label {
         display: block;
+        margin-bottom: 7px;
+        color: #444444;
         font-size: 12px;
-        font-weight: 600;
-        color: #c9d1d9;
-        margin-bottom: 8px;
+        font-weight: 700;
     }
 
     .input-wrap {
@@ -182,282 +206,356 @@ Silakan *copy* kode di bawah ini dan timpa seluruh isi file **`resources/views/a
 
     .input-field {
         width: 100%;
-        height: 46px;
-        padding: 0 16px;
-        background: #121519;
-        border: 1px solid #242b33;
-        border-radius: 8px;
-        color: #ffffff;
+        height: 44px;
+        padding: 0 14px;
+        border: 1px solid #dddddd;
+        border-radius: 9px;
+        background: #ffffff;
+        color: #292929;
         font-family: inherit;
         font-size: 13px;
         outline: none;
-        transition: 0.2s;
+        transition: .2s;
     }
 
     .input-field:focus {
-        border-color: #95dfc3;
-        background: #161a20;
+        border-color: #f07828;
+        box-shadow: 0 0 0 3px rgba(240,120,40,.12);
     }
 
     .input-field::placeholder {
-        color: #4b535d;
+        color: #aaaaaa;
+    }
+
+    .password-field {
+        padding-right: 85px;
     }
 
     .toggle-pw {
         position: absolute;
-        right: 15px;
         top: 50%;
+        right: 13px;
         transform: translateY(-50%);
-        background: none;
         border: none;
-        color: #8b949e;
+        background: none;
+        color: #e87525;
         font-size: 11px;
-        font-weight: 700;
+        font-weight: 800;
         cursor: pointer;
     }
 
     .toggle-pw:hover {
-        color: #95dfc3;
+        color: #c75b16;
     }
 
     /* Tombol Submit */
     .btn-submit {
         width: 100%;
         height: 48px;
-        background: #95dfc3;
-        color: #0d1014;
-        border: none;
-        border-radius: 8px;
-        font-size: 14px;
-        font-weight: 700;
-        cursor: pointer;
-        transition: 0.2s;
-        margin-top: 15px;
+        margin-top: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 8px;
+        border: none;
+        border-radius: 9px;
+        background: #f07828;
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: .2s;
     }
 
     .btn-submit:hover {
-        filter: brightness(1.1);
+        background: #dc6418;
         transform: translateY(-1px);
     }
 
-    .back-link {
-        display: block;
+    /* Link */
+    .register-links {
+        margin-top: 20px;
         text-align: center;
-        margin-top: 25px;
-        color: #8b949e;
+    }
+
+    .register-links a {
+        display: block;
+        margin-top: 11px;
+        color: #888888;
         font-size: 12px;
         text-decoration: none;
-        transition: 0.2s;
+        transition: .2s;
     }
 
-    .back-link:hover {
-        color: #ffffff;
+    .register-links a:hover {
+        color: #f07828;
     }
 
-    /* Responsive untuk Layar Kecil (Mobile) */
-    @media (max-width: 900px) {
-        .register-fullscreen {
-            display: block; /* Matikan flex agar bisa scroll alami di mobile */
+    .register-links a.login-link {
+        color: #f07828;
+        font-weight: 750;
+    }
+
+    /* Responsive */
+    @media(max-width: 750px) {
+        .register-page {
+            padding: 25px 15px;
         }
-        .register-left {
-            padding: 40px 30px;
+
+        .register-container {
+            grid-template-columns: 1fr;
             min-height: auto;
-            border-right: none;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
-        .brand-logo {
-            position: relative;
-            top: 0; left: 0;
-            display: inline-block;
-            margin-bottom: 30px;
+
+        .register-visual {
+            min-height: 240px;
+            padding: 65px 30px 35px;
         }
-        .left-footer {
+
+        .register-brand {
+            top: 22px;
+            left: 30px;
+        }
+
+        .visual-content h1 {
+            font-size: 30px;
+        }
+
+        .visual-footer {
             display: none;
         }
-        .left-content h1 {
-            font-size: 32px;
+
+        .register-form-section {
+            padding: 30px 25px;
         }
-        .register-right {
-            padding: 40px 30px;
-            height: auto;
-        }
-        .form-wrapper {
+
+        .register-form {
             padding: 0;
-            margin: 0 auto;
         }
     }
 </style>
 
-<div class="register-fullscreen">
-    
-    {{-- BAGIAN KIRI: Visual & Teks --}}
-    <div class="register-left">
-        <a href="{{ route('home') }}" class="brand-logo">
-            SewaKendaraan<span>.</span>
-        </a>
+<div class="register-page">
 
-        <div class="left-content">
-            <span class="control-tag">Customer Portal</span>
-            <h1>Mulai perjalanan.<br>Bersama kami.</h1>
-            <p>Daftar sekarang dan temukan kendaraan yang sesuai dengan kebutuhan perjalanan Anda. Proses cepat, mudah, dan aman.</p>
-        </div>
+    <div class="register-container">
 
-        <div class="left-footer">
-            © {{ date('Y') }} SewaKendaraan · Customer Area
-        </div>
-    </div>
+        {{-- Bagian Visual --}}
+        <div class="register-visual">
 
-    {{-- BAGIAN KANAN: Form --}}
-    <div class="register-right">
-        <div class="form-wrapper">
-            
-            <div class="form-icon">+</div>
-
-            <h2>Buat akun</h2>
-            <p>Lengkapi data berikut untuk mulai menyewa kendaraan.</p>
-
-            {{-- Menampilkan Error --}}
-            @if ($errors->any())
-                <div class="register-alert error" role="alert">
-                    <ul>
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
-            {{-- Menampilkan Sukses --}}
-            @if (session('success'))
-                <div class="register-alert success" role="status">
-                    {{ session('success') }}
-                </div>
-            @endif
-
-            <form method="POST" action="{{ route('register.store') }}">
-                @csrf
-
-                <div class="input-group">
-                    <label for="nama">Nama lengkap</label>
-                    <div class="input-wrap">
-                        <input 
-                            type="text" 
-                            id="nama" 
-                            name="nama" 
-                            class="input-field" 
-                            placeholder="Masukkan nama lengkap" 
-                            value="{{ old('nama') }}" 
-                            maxlength="120"
-                            required 
-                            autofocus
-                        >
-                    </div>
-                </div>
-
-                <div class="input-group">
-                    <label for="email">Email</label>
-                    <div class="input-wrap">
-                        <input 
-                            type="email" 
-                            id="email" 
-                            name="email" 
-                            class="input-field" 
-                            placeholder="nama@domain.com" 
-                            value="{{ old('email') }}" 
-                            maxlength="150"
-                            required
-                        >
-                    </div>
-                </div>
-
-                <div class="input-group">
-                    <label for="no_hp">Nomor HP</label>
-                    <div class="input-wrap">
-                        <input 
-                            type="tel" 
-                            id="no_hp" 
-                            name="no_hp" 
-                            class="input-field" 
-                            placeholder="Contoh: 081234567890" 
-                            value="{{ old('no_hp') }}" 
-                            maxlength="25"
-                            required
-                        >
-                    </div>
-                </div>
-
-                <div class="input-group">
-                    <label for="password">Password (Minimal 8 karakter)</label>
-                    <div class="input-wrap">
-                        <input 
-                            type="password" 
-                            id="password" 
-                            name="password" 
-                            class="input-field" 
-                            placeholder="Buat password" 
-                            minlength="8"
-                            required
-                        >
-                        <button type="button" class="toggle-pw register-password-toggle" data-target="password">Lihat</button>
-                    </div>
-                </div>
-
-                <div class="input-group">
-                    <label for="password_confirmation">Ulangi password</label>
-                    <div class="input-wrap">
-                        <input 
-                            type="password" 
-                            id="password_confirmation" 
-                            name="password_confirmation" 
-                            class="input-field" 
-                            placeholder="Masukkan ulang password" 
-                            minlength="8"
-                            required
-                        >
-                        <button type="button" class="toggle-pw register-password-toggle" data-target="password_confirmation">Lihat</button>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn-submit">
-                    Buat akun sekarang &rarr;
-                </button>
-            </form>
-
-            <a href="{{ route('login') }}" class="back-link">
-                Sudah punya akun? <span style="color: #95dfc3; font-weight: 700;">Login sekarang</span>
-            </a>
-            
-            <a href="{{ route('home') }}" class="back-link" style="margin-top: 10px;">
-                &larr; Kembali ke website utama
+            <a href="{{ route('home') }}" class="register-brand">
+                SewaKendaraan<span>.</span>
             </a>
 
+            <div class="visual-content">
+                <span class="visual-tag">Customer Portal</span>
+
+                <h1>Mulai perjalanan.<br>Lebih mudah.</h1>
+
+                <p>
+                    Daftar sekarang dan temukan kendaraan yang sesuai
+                    dengan kebutuhan perjalananmu. Proses cepat,
+                    mudah, dan nyaman.
+                </p>
+            </div>
+
+            <div class="visual-decoration"></div>
+
+            <div class="visual-footer">
+                © {{ date('Y') }} SewaKendaraan · Customer Area
+            </div>
+
         </div>
+
+        {{-- Bagian Form Register --}}
+        <div class="register-form-section">
+
+            <div class="register-form">
+
+                <div class="form-icon">+</div>
+
+                <h2>Buat Akun</h2>
+
+                <p class="form-subtitle">
+                    Lengkapi data berikut untuk mulai menyewa kendaraan.
+                </p>
+
+                {{-- Notifikasi Error --}}
+                @if ($errors->any())
+                    <div class="register-alert error" role="alert">
+                        <ul>
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                {{-- Notifikasi Sukses --}}
+                @if (session('success'))
+                    <div class="register-alert success" role="status">
+                        {{ session('success') }}
+                    </div>
+                @endif
+
+                <form method="POST" action="{{ route('register.store') }}">
+                    @csrf
+
+                    <div class="input-group">
+                        <label for="nama">Nama Lengkap</label>
+
+                        <div class="input-wrap">
+                            <input
+                                type="text"
+                                id="nama"
+                                name="nama"
+                                class="input-field"
+                                placeholder="Masukkan nama lengkap"
+                                value="{{ old('nama') }}"
+                                maxlength="120"
+                                required
+                                autofocus
+                            >
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="email">Email</label>
+
+                        <div class="input-wrap">
+                            <input
+                                type="email"
+                                id="email"
+                                name="email"
+                                class="input-field"
+                                placeholder="nama@domain.com"
+                                value="{{ old('email') }}"
+                                maxlength="150"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="no_hp">Nomor HP</label>
+
+                        <div class="input-wrap">
+                            <input
+                                type="tel"
+                                id="no_hp"
+                                name="no_hp"
+                                class="input-field"
+                                placeholder="Contoh: 081234567890"
+                                value="{{ old('no_hp') }}"
+                                maxlength="25"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="password">Password (Minimal 8 karakter)</label>
+
+                        <div class="input-wrap">
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                class="input-field password-field"
+                                placeholder="Buat password"
+                                minlength="8"
+                                autocomplete="new-password"
+                                required
+                            >
+
+                            <button
+                                type="button"
+                                class="toggle-pw register-password-toggle"
+                                data-target="password"
+                            >
+                                Lihat
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="password_confirmation">Konfirmasi Password</label>
+
+                        <div class="input-wrap">
+                            <input
+                                type="password"
+                                id="password_confirmation"
+                                name="password_confirmation"
+                                class="input-field password-field"
+                                placeholder="Masukkan ulang password"
+                                minlength="8"
+                                autocomplete="new-password"
+                                required
+                            >
+
+                            <button
+                                type="button"
+                                class="toggle-pw register-password-toggle"
+                                data-target="password_confirmation"
+                            >
+                                Lihat
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit">
+                        Buat Akun Sekarang →
+                    </button>
+
+                </form>
+
+                <div class="register-links">
+
+                    <a href="{{ route('login') }}" class="login-link">
+                        Sudah punya akun? Login sekarang
+                    </a>
+
+                    <a href="{{ route('home') }}">
+                        ← Kembali ke website utama
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
 
 </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const toggleButtons = document.querySelectorAll('.register-password-toggle');
+
+        const toggleButtons = document.querySelectorAll(
+            '.register-password-toggle'
+        );
 
         toggleButtons.forEach(function (button) {
+
             button.addEventListener('click', function () {
+
                 const targetId = button.dataset.target;
                 const input = document.getElementById(targetId);
 
                 if (!input) return;
 
                 const isHidden = input.type === 'password';
+
                 input.type = isHidden ? 'text' : 'password';
-                button.textContent = isHidden ? 'Sembunyikan' : 'Lihat';
+
+                button.textContent = isHidden
+                    ? 'Sembunyikan'
+                    : 'Lihat';
+
             });
+
         });
+
     });
 </script>
 @endsection
-
-```
