@@ -14,7 +14,7 @@
         --dash-text: #f4f7fb;
         --dash-muted: #a2adbb;
         --dash-border: rgba(255,255,255,.09);
-    }
+    }   
 
     .admin-dashboard {
         color: var(--dash-text);
@@ -510,6 +510,52 @@
         color: var(--dash-teal);
     }
 
+
+    /* Kalender jadwal sopir: warna diselaraskan dengan tema gelap dashboard */
+    .admin-dashboard .driver-calendar-card { margin: 24px 0; overflow: hidden; }
+    .admin-dashboard .driver-calendar {
+        background: linear-gradient(145deg, rgba(20,35,48,.96), rgba(13,23,34,.98));
+        color: var(--dash-text); border: 1px solid var(--dash-border);
+        border-radius: 14px; padding: 18px;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
+    }
+    .admin-dashboard .driver-calendar-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+    .admin-dashboard .driver-calendar-title { margin:0; color:var(--dash-text); font-size:22px; font-weight:600; }
+    .admin-dashboard .driver-calendar-nav { display:flex; gap:8px; }
+    .admin-dashboard .driver-calendar-nav button {
+        width:34px; height:34px; border:1px solid var(--dash-border); border-radius:8px;
+        background:rgba(255,255,255,.035); color:var(--dash-teal); font-size:23px;
+        line-height:1; cursor:pointer; padding:0; transition:.18s ease;
+    }
+    .admin-dashboard .driver-calendar-nav button:hover {
+        background:rgba(66,214,197,.12); border-color:rgba(66,214,197,.38);
+    }
+    .admin-dashboard .driver-calendar-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px; }
+    .admin-dashboard .driver-calendar-weekday { text-align:center; color:var(--dash-muted); font-size:13px; font-weight:600; padding:4px 0 8px; }
+    .admin-dashboard .driver-calendar-day {
+        min-height:72px; border:1px solid rgba(255,255,255,.10); border-radius:9px;
+        padding:6px; background:rgba(255,255,255,.025); overflow:hidden;
+        transition:border-color .18s ease, background .18s ease;
+    }
+    .admin-dashboard .driver-calendar-day:not(.empty):hover {
+        border-color:rgba(66,214,197,.35); background:rgba(66,214,197,.045);
+    }
+    .admin-dashboard .driver-calendar-day.empty { border-color:transparent; background:transparent; }
+    .admin-dashboard .driver-calendar-date { color:#e8eef5; font-size:14px; font-weight:600; margin-bottom:6px; }
+    .admin-dashboard .driver-calendar-event {
+        display:block; background:rgba(66,214,197,.12); border:1px solid rgba(66,214,197,.15);
+        color:#72e5d6; border-radius:5px; padding:2px 5px; margin-top:4px;
+        font-size:12px; line-height:1.35; overflow-wrap:anywhere;
+    }
+    .admin-dashboard .driver-calendar-empty { color:var(--dash-muted); font-size:12px; }
+    @media (max-width: 650px) {
+        .admin-dashboard .driver-calendar { padding:10px; }
+        .admin-dashboard .driver-calendar-day { min-height:58px; padding:4px; }
+        .admin-dashboard .driver-calendar-event { font-size:10px; padding:2px 3px; }
+        .admin-dashboard .driver-calendar-title { font-size:18px; }
+        .admin-dashboard .driver-calendar-grid { gap:3px; }
+    }
+
     @media (max-width: 1100px) {
         .admin-dashboard .stats-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -629,7 +675,36 @@
         </div>
     </div>
 
-    {{-- TABEL PESANAN --}}
+        {{-- KALENDER JADWAL SOPIR (KHUSUS ADMIN) --}}
+    <section class="content-card driver-calendar-card">
+        <div class="card-heading">
+            <div>
+                <h3>Jadwal Sopir</h3>
+                <p>Jadwal sopir dan jenis mobil yang dibawa setiap tanggal.</p>
+            </div>
+            <span class="badge">KALENDER</span>
+        </div>
+        <div class="driver-calendar" id="driver-calendar" data-schedules='@json($jadwalSopir ?? [])'>
+            <div class="driver-calendar-head">
+                <h2 class="driver-calendar-title" id="driver-calendar-month">Memuat kalender...</h2>
+                <div class="driver-calendar-nav">
+                    <button type="button" id="driver-calendar-prev" aria-label="Bulan sebelumnya">‹</button>
+                    <button type="button" id="driver-calendar-next" aria-label="Bulan berikutnya">›</button>
+                </div>
+            </div>
+            <div class="driver-calendar-grid" id="driver-calendar-grid">
+                <div class="driver-calendar-weekday">Sen</div>
+                <div class="driver-calendar-weekday">Sel</div>
+                <div class="driver-calendar-weekday">Rab</div>
+                <div class="driver-calendar-weekday">Kam</div>
+                <div class="driver-calendar-weekday">Jum</div>
+                <div class="driver-calendar-weekday">Sab</div>
+                <div class="driver-calendar-weekday">Min</div>
+            </div>
+        </div>
+    </section>
+
+{{-- TABEL PESANAN --}}
     <div class="section-heading">
         <div>
             <h2>Pesanan Terbaru</h2>
@@ -645,9 +720,14 @@
                 <p>Perubahan status akan dikirim ke sistem setelah tombol Simpan ditekan.</p>
             </div>
         </div>
+        <div class="order-filters" style="display:flex;gap:8px;flex-wrap:wrap;padding:14px 20px;border-bottom:1px solid var(--dash-border)">
+            <button type="button" class="btn secondary order-filter active" data-filter="all">Semua Pemesanan</button>
+            <button type="button" class="btn secondary order-filter" data-filter="without">Tanpa Supir</button>
+            <button type="button" class="btn secondary order-filter" data-filter="with">Dengan Supir</button>
+        </div>
 
         <div class="table-wrap">
-            <table>
+            <table id="orders-table">
                 <thead>
                     <tr>
                         <th>ID Pesanan</th>
@@ -661,7 +741,7 @@
 
                 <tbody>
                     @forelse($orders as $o)
-                        <tr>
+                        <tr data-driver="{{ $o->menggunakan_sopir ? 'with' : 'without' }}">
                             <td>
                                 <span class="order-id">#{{ $o->id_pemesanan }}</span>
                             </td>
@@ -688,9 +768,8 @@
                             </td>
 
                             <td>
-                                <span class="total-price">
-                                    Rp{{ number_format($o->total_biaya, 0, ',', '.') }}
-                                </span>
+                                <span class="total-price">Rp{{ number_format($o->total_biaya, 0, ',', '.') }}</span>
+                                <span class="subtext">{{ $o->menggunakan_sopir ? 'Termasuk supir' : 'Tanpa supir' }}</span>
                             </td>
 
                             <td>
@@ -716,16 +795,19 @@
                                         @endforeach
                                     </select>
 
-                                    <select name="id_sopir" aria-label="Pilih sopir">
-                                        <option value="">-- Pilih sopir --</option>
-
-                                        @foreach(\App\Models\Sopir::where('status', 'tersedia')->get() as $s)
-                                            <option value="{{ $s->id_sopir }}"
-                                                @selected($o->id_sopir == $s->id_sopir)>
-                                                {{ $s->nama }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    @if($o->menggunakan_sopir)
+                                        <label class="subtext">Penugasan supir</label>
+                                        <select name="id_sopir" aria-label="Pilih supir" required>
+                                            <option value="">-- Pilih supir kosong --</option>
+                                            @foreach($o->available_sopirs as $s)
+                                                <option value="{{ $s->id_sopir }}" @selected($o->id_sopir == $s->id_sopir)>
+                                                    {{ $s->nama }}{{ $s->id_sopir == $o->id_sopir ? ' (ditugaskan)' : '' }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    @else
+                                        <span class="subtext">Tidak memerlukan supir</span>
+                                    @endif
 
                                     <select name="status_pembayaran" aria-label="Status pembayaran">
                                         <option value="">-- Pembayaran --</option>
@@ -849,4 +931,76 @@
     </div>
 
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const buttons = document.querySelectorAll('.order-filter');
+    const rows = document.querySelectorAll('#orders-table tbody tr[data-driver]');
+    buttons.forEach(button => button.addEventListener('click', () => {
+        const filter = button.dataset.filter;
+        buttons.forEach(item => item.classList.toggle('active', item === button));
+        rows.forEach(row => { row.style.display = filter === 'all' || row.dataset.driver === filter ? '' : 'none'; });
+    }));
+
+    // Kalender jadwal sopir dengan navigasi bulan.
+    const calendar = document.getElementById('driver-calendar');
+    if (calendar) {
+        let schedules = {};
+        try { schedules = JSON.parse(calendar.dataset.schedules || '{}'); } catch (e) { schedules = {}; }
+
+        const monthTitle = document.getElementById('driver-calendar-month');
+        const grid = document.getElementById('driver-calendar-grid');
+        const monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+        let shownMonth = new Date();
+        shownMonth = new Date(shownMonth.getFullYear(), shownMonth.getMonth(), 1);
+
+        function renderCalendar() {
+            const year = shownMonth.getFullYear();
+            const month = shownMonth.getMonth();
+            monthTitle.textContent = monthNames[month] + ' ' + year;
+            grid.querySelectorAll('.driver-calendar-day').forEach(el => el.remove());
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const offset = (firstDay + 6) % 7; // Senin sebagai kolom pertama
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            for (let i = 0; i < offset; i++) {
+                const blank = document.createElement('div');
+                blank.className = 'driver-calendar-day empty';
+                grid.appendChild(blank);
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const cell = document.createElement('div');
+                cell.className = 'driver-calendar-day';
+                const dateLabel = document.createElement('div');
+                dateLabel.className = 'driver-calendar-date';
+                dateLabel.textContent = day;
+                cell.appendChild(dateLabel);
+
+                const key = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+                const events = schedules[key] || [];
+                events.forEach(event => {
+                    const item = document.createElement('span');
+                    item.className = 'driver-calendar-event';
+                    item.textContent = event.sopir + ' — ' + event.mobil;
+                    item.title = event.sopir + ' — ' + event.mobil;
+                    cell.appendChild(item);
+                });
+                grid.appendChild(cell);
+            }
+        }
+
+        document.getElementById('driver-calendar-prev').addEventListener('click', () => {
+            shownMonth = new Date(shownMonth.getFullYear(), shownMonth.getMonth() - 1, 1);
+            renderCalendar();
+        });
+        document.getElementById('driver-calendar-next').addEventListener('click', () => {
+            shownMonth = new Date(shownMonth.getFullYear(), shownMonth.getMonth() + 1, 1);
+            renderCalendar();
+        });
+        renderCalendar();
+    }
+});
+</script>
+
 @endsection

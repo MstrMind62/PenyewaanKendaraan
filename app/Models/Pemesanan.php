@@ -16,6 +16,7 @@ class Pemesanan extends Model
         'id_sopir',
         'tanggal_sewa',
         'durasi',
+        'menggunakan_sopir',
         'total_biaya',
         'layanan',
         'status',
@@ -25,6 +26,7 @@ class Pemesanan extends Model
     protected $casts = [
         'tanggal_sewa' => 'date',
         'total_biaya' => 'decimal:2',
+        'menggunakan_sopir' => 'boolean',
     ];
 
     public function getRouteKeyName()

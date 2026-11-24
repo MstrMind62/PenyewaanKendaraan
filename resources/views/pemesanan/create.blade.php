@@ -154,6 +154,19 @@
             <textarea name="alamat_antar" rows="2">{{ old('alamat_antar') }}</textarea>
         </div>
 
+        <div class="field driver-choice">
+            <label>Layanan supir</label>
+            <label class="driver-option">
+                <input type="radio" name="menggunakan_sopir" value="0" @checked(old('menggunakan_sopir', '0') === '0')>
+                Tidak menggunakan supir
+            </label>
+            <label class="driver-option">
+                <input type="radio" name="menggunakan_sopir" value="1" @checked(old('menggunakan_sopir', '0') === '1')>
+                Menggunakan supir (+Rp150.000 per hari)
+            </label>
+            <small class="muted">Biaya supir dihitung untuk setiap tanggal sewa yang dipilih.</small>
+        </div>
+
         <div class="field">
             <label for="metode_pembayaran">Metode pembayaran</label>
 
@@ -176,6 +189,7 @@
         <div class="card booking-total" style="margin: 16px 0;">
             <span class="muted">Estimasi total</span>
 
+            <div class="subtext" id="driver-fee">Biaya supir: Rp0</div>
             <div class="price" id="total">
                 Rp{{ number_format($armada->harga_sewa, 0, ',', '.') }}
             </div>
@@ -197,9 +211,9 @@
 </div>
 
 <style>
-    .booking-card {
-        color: var(--text, inherit);
-    }
+    .booking-card { color: var(--text, inherit); }
+    .driver-option { display:flex; align-items:center; gap:10px; padding:10px 12px; margin:7px 0; border:1px solid var(--border, #334155); border-radius:10px; cursor:pointer; }
+    .driver-option input { width:auto; }
 
     .calendar-heading {
         display: flex;
@@ -422,6 +436,10 @@
     const selectedInputs = document.getElementById('selected-inputs');
     const message = document.getElementById('calendar-message');
     const total = document.getElementById('total');
+    const driverFee = document.getElementById('driver-fee');
+    const driverInputs = document.querySelectorAll('input[name="menggunakan_sopir"]');
+    const biayaSupirPerHari = 150000;
+    function pakaiSupir() { return document.querySelector('input[name="menggunakan_sopir"]:checked')?.value === '1'; }
     const layanan = document.getElementById('layanan');
     const alamat = document.getElementById('alamat');
     const submit = document.getElementById('submit-booking');
@@ -580,16 +598,18 @@
             selectedInputs.appendChild(input);
         });
 
+        const biayaDriver = pakaiSupir() ? biayaSupirPerHari * daftarTerpilih.length : 0;
+        driverFee.textContent = 'Biaya supir: ' + new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(biayaDriver);
         total.textContent = new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            maximumFractionDigits: 0
-        }).format(harga * daftarTerpilih.length);
+            style: 'currency', currency: 'IDR', maximumFractionDigits: 0
+        }).format((harga * daftarTerpilih.length) + biayaDriver);
 
         submit.disabled =
             !armadaAktif ||
             daftarTerpilih.length !== jumlahHari;
     }
+
+    driverInputs.forEach(input => input.addEventListener('change', render));
 
     // Jika durasi berubah, jumlah tanggal pilihan disesuaikan.
     durasi.addEventListener('input', () => {
