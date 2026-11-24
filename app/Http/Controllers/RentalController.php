@@ -198,6 +198,8 @@ class RentalController extends Controller
 
             'durasi' => 'required|integer|min:1|max:31',
 
+            'menggunakan_sopir' => 'required|in:0,1',
+
             'layanan' => 'required|in:ambil,diantar',
 
             'alamat_antar' => 'nullable|required_if:layanan,diantar|string|max:500',
@@ -282,8 +284,9 @@ class RentalController extends Controller
                 'id_armada' => $armadaTerkunci->id_armada,
                 'tanggal_sewa' => $tanggalDipilih->first(),
                 'durasi' => $tanggalDipilih->count(),
+                'menggunakan_sopir' => (bool) (int) $d['menggunakan_sopir'],
                 'total_biaya' =>
-                    $armadaTerkunci->harga_sewa * $tanggalDipilih->count(),
+                    ($armadaTerkunci->harga_sewa + ((int) $d['menggunakan_sopir'] * 150000)) * $tanggalDipilih->count(),
                 'layanan' => $d['layanan'],
                 'alamat_antar' => $d['alamat_antar'] ?? null,
                 'status' => 'Menunggu Pembayaran',
@@ -509,16 +512,60 @@ class RentalController extends Controller
         ];
 
         $orders = Pemesanan::with([
-            'customer',
-            'armada',
-            'sopir',
-            'pembayaran',
-        ])
-            ->orderBy('id_pemesanan', 'desc')
-            ->take(12)
-            ->get();
+            'customer', 'armada', 'sopir', 'pembayaran', 'tanggalPemesanan',
+        ])->orderBy('id_pemesanan', 'desc')->get();
 
-        return view('admin.dashboard', compact('stats', 'orders'));
+        // Daftar sopir dihitung per pesanan berdasarkan semua tanggal sewa.
+        foreach ($orders as $order) {
+            $tanggalOrder = $order->tanggalPemesanan->pluck('tanggal_sewa')->map(fn ($t) => $t->toDateString())->all();
+            $available = Sopir::where('status', 'tersedia')
+                ->whereDoesntHave('pemesanans', function ($q) use ($tanggalOrder, $order) {
+                    $q->where('status', '!=', 'Dibatalkan')
+                      ->where('id_pemesanan', '!=', $order->id_pemesanan)
+                      ->whereHas('tanggalPemesanan', function ($t) use ($tanggalOrder) {
+                          $t->whereIn('tanggal_sewa', $tanggalOrder);
+                      });
+                })->get();
+            if ($order->sopir && !$available->contains('id_sopir', $order->id_sopir)) {
+                $available->prepend($order->sopir);
+            }
+            $order->setAttribute('available_sopirs', $available);
+        }
+
+        // Susun jadwal sopir untuk kalender Admin berdasarkan tanggal sewa.
+        // Pesanan yang dibatalkan atau tidak menggunakan sopir tidak ditampilkan.
+        $jadwalSopir = [];
+
+        foreach ($orders as $order) {
+            if (
+                !$order->menggunakan_sopir ||
+                !$order->sopir ||
+                !$order->armada ||
+                $order->status === 'Dibatalkan'
+            ) {
+                continue;
+            }
+
+            $tanggalTugas = $order->tanggalPemesanan->pluck('tanggal_sewa');
+
+            // Cadangan untuk pesanan lama yang belum memiliki detail tanggal.
+            if ($tanggalTugas->isEmpty() && $order->tanggal_sewa) {
+                $awal = \Carbon\Carbon::parse($order->tanggal_sewa);
+                for ($i = 0; $i < max(1, (int) $order->durasi); $i++) {
+                    $tanggalTugas->push($awal->copy()->addDays($i));
+                }
+            }
+
+            foreach ($tanggalTugas as $tanggal) {
+                $keyTanggal = \Carbon\Carbon::parse($tanggal)->toDateString();
+                $jadwalSopir[$keyTanggal][] = [
+                    'sopir' => $order->sopir->nama,
+                    'mobil' => $order->armada->nama_kendaraan,
+                ];
+            }
+        }
+
+        return view('admin.dashboard', compact('stats', 'orders', 'jadwalSopir'));
     }
 
     /*
@@ -721,10 +768,47 @@ public function updateArmadaStatus(Request $r, Armada $armada)
                 }
             }
 
+            // Pastikan sopir yang dipilih tidak memiliki jadwal pada tanggal pesanan ini.
+            if (!empty($d['id_sopir']) && !$pesanan->menggunakan_sopir) {
+                throw ValidationException::withMessages([
+                    'id_sopir' => 'Pesanan ini tidak menggunakan layanan supir.',
+                ]);
+            }
+
+            if (!empty($d['id_sopir']) && $pesanan->menggunakan_sopir) {
+                $supirDipilih = Sopir::where('id_sopir', $d['id_sopir'])->lockForUpdate()->firstOrFail();
+                if ($supirDipilih->status !== 'tersedia' && (int) $pesanan->id_sopir !== (int) $supirDipilih->id_sopir) {
+                    throw ValidationException::withMessages([
+                        'id_sopir' => 'Supir tidak berstatus tersedia. Pilih supir lain.',
+                    ]);
+                }
+                $tanggalOrder = DB::table('Rental_kendaraan_tanggal_pemesanan')
+                    ->where('id_pemesanan', $pesanan->id_pemesanan)
+                    ->pluck('tanggal_sewa');
+                $bentrok = Pemesanan::where('id_sopir', $d['id_sopir'])
+                    ->where('id_pemesanan', '!=', $pesanan->id_pemesanan)
+                    ->where('status', '!=', 'Dibatalkan')
+                    ->whereHas('tanggalPemesanan', function ($q) use ($tanggalOrder) {
+                        $q->whereIn('tanggal_sewa', $tanggalOrder);
+                    })->exists();
+                if ($bentrok) {
+                    throw ValidationException::withMessages([
+                        'id_sopir' => 'Supir sudah memiliki tugas pada salah satu tanggal penyewaan ini. Pilih supir lain.',
+                    ]);
+                }
+            }
+
+            if ($pesanan->menggunakan_sopir && empty($d['id_sopir']) && $d['status'] !== 'Dibatalkan') {
+                // Boleh menyimpan status lain tanpa penugasan? Tidak: admin wajib menentukan sopir.
+                throw ValidationException::withMessages([
+                    'id_sopir' => 'Pilih supir untuk pesanan yang menggunakan layanan supir.',
+                ]);
+            }
+
             // Perbarui status pesanan dan sopir.
             $pesanan->update([
                 'status' => $d['status'],
-                'id_sopir' => $d['id_sopir'] ?? $pesanan->id_sopir,
+                'id_sopir' => array_key_exists('id_sopir', $d) ? ($d['id_sopir'] ?: null) : $pesanan->id_sopir,
             ]);
 
             // Perbarui status pembayaran jika dikirim dari form admin.
@@ -1042,12 +1126,33 @@ public function updateArmadaStatus(Request $r, Armada $armada)
 
         $totalPemesanan = $orders->count();
 
-        $totalPendapatan = $orders
-            ->filter(function ($order) {
-                return $order->pembayaran &&
-                    $order->pembayaran->status_pembayaran === 'Dibayar';
-            })
-            ->sum('total_biaya');
+        // Ringkasan pendapatan hanya menghitung transaksi yang sudah dibayar.
+        $pesananDibayar = $orders->filter(function ($order) {
+            return $order->pembayaran &&
+                $order->pembayaran->status_pembayaran === 'Dibayar';
+        });
+
+        // Total keseluruhan tetap menggunakan total_biaya yang tersimpan.
+        $totalPendapatan = $pesananDibayar->sum('total_biaya');
+
+        // Biaya sopir Rp150.000 dikalikan jumlah tanggal sewa yang dipilih.
+        $totalFeeSupir = $pesananDibayar->sum(function ($order) {
+            if (!$order->menggunakan_sopir) {
+                return 0;
+            }
+
+            $jumlahHari = $order->tanggalPemesanan->count();
+
+            // Pemesanan lama tanpa detail tanggal menggunakan nilai durasi.
+            if ($jumlahHari < 1) {
+                $jumlahHari = (int) ($order->durasi ?? 0);
+            }
+
+            return 150000 * $jumlahHari;
+        });
+
+        // Fee armada adalah total keseluruhan dikurangi fee sopir.
+        $totalFeeArmada = $totalPendapatan - $totalFeeSupir;
 
         $pemesananAktif = $orders
             ->whereIn('status', ['Dikonfirmasi', 'Dalam Perjalanan'])
@@ -1065,6 +1170,8 @@ public function updateArmadaStatus(Request $r, Armada $armada)
             'filters',
             'totalPemesanan',
             'totalPendapatan',
+            'totalFeeSupir',
+            'totalFeeArmada',
             'pemesananAktif',
             'pemesananMenunggu'
         ));

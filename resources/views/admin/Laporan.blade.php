@@ -281,7 +281,17 @@
         </div>
 
         <div class="report-card">
-            <small>Total Pendapatan</small>
+            <small>Total Fee Sewa Armada</small>
+            <h3>Rp {{ number_format($totalFeeArmada, 0, ',', '.') }}</h3>
+        </div>
+
+        <div class="report-card">
+            <small>Total Fee Sopir</small>
+            <h3>Rp {{ number_format($totalFeeSupir, 0, ',', '.') }}</h3>
+        </div>
+
+        <div class="report-card">
+            <small>Total Keseluruhan</small>
             <h3>Rp {{ number_format($totalPendapatan, 0, ',', '.') }}</h3>
         </div>
 
