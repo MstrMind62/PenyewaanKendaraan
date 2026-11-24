@@ -65,3 +65,6 @@ Route::prefix('supir')->name('supir.')->group(function () {
 
     
 });
+
+Route::post('/midtrans/callback', [RentalController::class, 'midtransCallback'])
+    ->name('midtrans.callback');

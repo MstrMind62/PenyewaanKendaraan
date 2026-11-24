@@ -7,9 +7,24 @@
 <h1>Pesanan Saya</h1>
 <p class="muted">Riwayat pemesanan dan status pembayaran.</p>
 
+@if (session('success'))
+    <div class="card" style="margin-bottom: 16px; border-color: rgba(66, 220, 195, .4); color: #4ee1c5;">
+        {{ session('success') }}
+    </div>
+@endif
+
+@if ($errors->any())
+    <div class="card" style="margin-bottom: 16px; border-color: rgba(251, 133, 133, .4); color: #fb8585;">
+        <ul style="margin: 0; padding-left: 18px;">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
 <div class="grid">
     @forelse($orders as $o)
-
         <article class="card">
 
             {{-- Status pemesanan --}}
@@ -24,17 +39,12 @@
             {{-- Tanggal sewa --}}
             <p>
                 <strong>Tanggal sewa:</strong>
-
                 @if($o->tanggalPemesanan->isNotEmpty())
-
                     {{ $o->tanggalPemesanan
                         ->map(fn($item) => \Carbon\Carbon::parse($item->tanggal_sewa)->format('d-m-Y'))
                         ->implode(', ') }}
-
                 @else
-
                     {{ \Carbon\Carbon::parse($o->tanggal_sewa)->format('d-m-Y') }}
-
                 @endif
             </p>
 
@@ -69,8 +79,11 @@
                 ({{ $o->pembayaran->metode_pembayaran ?? '-' }})
             </p>
 
-            {{-- Memilih metode pembayaran --}}
+            {{-- Pembayaran via Midtrans Snap --}}
             @if($o->status === 'Menunggu Pembayaran')
+                @php
+                    $metodeAktif = old('metode_pembayaran', $o->pembayaran->metode_pembayaran ?? 'Transfer Bank');
+                @endphp
 
                 <form
                     method="POST"
@@ -83,16 +96,15 @@
                         name="metode_pembayaran"
                         style="max-width:180px"
                     >
-                        <option value="Transfer Bank">Transfer Bank</option>
-                        <option value="E-Wallet">E-Wallet</option>
-                        <option value="QRIS">QRIS</option>
+                        <option value="Transfer Bank" @selected($metodeAktif === 'Transfer Bank')>Transfer Bank</option>
+                        <option value="E-Wallet" @selected($metodeAktif === 'E-Wallet')>E-Wallet</option>
+                        <option value="QRIS" @selected($metodeAktif === 'QRIS')>QRIS</option>
                     </select>
 
-                    <button class="secondary">
-                        Pilih metode
+                    <button type="submit" class="secondary">
+                        Bayar dengan Midtrans
                     </button>
                 </form>
-
             @endif
 
             {{-- Membatalkan pesanan --}}
@@ -100,7 +112,6 @@
                 'Menunggu Pembayaran',
                 'Menunggu Konfirmasi'
             ]))
-
                 <form
                     method="POST"
                     action="{{ route('booking.cancel', $o) }}"
@@ -113,17 +124,13 @@
                         Batalkan pesanan
                     </button>
                 </form>
-
             @endif
 
         </article>
-
     @empty
-
         <div class="card">
             Kamu belum memiliki pesanan.
         </div>
-
     @endforelse
 </div>
 
