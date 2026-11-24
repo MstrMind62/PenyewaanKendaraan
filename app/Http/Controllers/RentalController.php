@@ -983,4 +983,42 @@ public function updateArmadaStatus(Request $r, Armada $armada)
             'pemesananMenunggu'
         ));
     }
+
+    public function saveArmada(Request $r)
+    {
+        abort_unless(session('role') === 'admin', 403);
+
+        // Sesuaikan nama field berikut dengan input form admin & kolom di tabel Rental_kendaraan_armada
+        $d = $r->validate([
+            'nama_kendaraan' => 'required|string|max:120',
+            'tipe' => 'required|string|max:100',
+            'harga_sewa' => 'required|numeric|min:0',
+            'stok' => 'required|integer|min:0|max:1000',
+            'status_ketersediaan' => 'required|in:tersedia,disewa,perawatan',
+            'gambar' => 'nullable|url|max:1000',
+        ]);
+
+        if (!empty($d['gambar'])) {
+            $d['gambar'] = $this->formatGoogleDriveUrl($d['gambar']);
+        }
+
+        Armada::create($d);
+
+        return back()->with('success', 'Data armada berhasil ditambahkan.');
+    }
+
+    private function formatGoogleDriveUrl(string $url): string
+    {
+        // Format: https://drive.google.com/file/d/{FILE_ID}/view...
+        if (preg_match('~drive\.google\.com/file/d/([a-zA-Z0-9_-]+)~', $url, $matches)) {
+            return 'https://drive.google.com/thumbnail?id=' . $matches[1] . '&sz=w1000';
+        }
+
+        // Format: https://drive.google.com/open?id={FILE_ID} atau uc?id={FILE_ID}
+        if (preg_match('~[?&]id=([a-zA-Z0-9_-]+)~', $url, $matches)) {
+            return 'https://drive.google.com/thumbnail?id=' . $matches[1] . '&sz=w1000';
+        }
+
+        return $url;
+    }
 }
