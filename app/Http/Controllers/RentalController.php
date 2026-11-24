@@ -13,6 +13,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Midtrans\Config;
+use Midtrans\Notification;
+use Midtrans\Snap;
+
 
 class RentalController extends Controller
 {
@@ -848,7 +852,7 @@ public function updateArmadaStatus(Request $r, Armada $armada)
 
         if ($p->status !== 'Menunggu Pembayaran') {
             return back()->withErrors([
-                'pembayaran' => 'Metode pembayaran hanya dapat diubah saat pesanan menunggu pembayaran.',
+                'pembayaran' => 'Pembayaran hanya dapat dilakukan saat pesanan menunggu pembayaran.',
             ]);
         }
 
@@ -860,15 +864,97 @@ public function updateArmadaStatus(Request $r, Armada $armada)
             ]);
         }
 
+        $serverKey = trim((string) (config('midtrans.server_key') ?: env('MIDTRANS_SERVER_KEY')));
+
+        if (empty($serverKey)) {
+            return back()->withErrors([
+                'pembayaran' => 'Server Key Midtrans belum terbaca. Pastikan MIDTRANS_SERVER_KEY ada di .env dan config/midtrans.php.',
+            ]);
+        }
+
+        $grossAmount = (int) round((float) $p->total_biaya);
+        if ($grossAmount <= 0) {
+            return back()->withErrors([
+                'pembayaran' => 'Total biaya pesanan tidak valid untuk diproses ke Midtrans.',
+            ]);
+        }
+
+        Config::$serverKey    = $serverKey;
+        Config::$isProduction = (bool) (config('midtrans.is_production') ?? false);
+        Config::$isSanitized  = (bool) (config('midtrans.is_sanitized') ?? true);
+        Config::$is3ds        = (bool) (config('midtrans.is_3ds') ?? true);
+
+        // Order ID unik setiap kali Snap dibuat agar tidak ditolak Midtrans sebagai duplicate order_id
+        $orderId = 'SEWA-' . $p->id_pemesanan . '-' . time();
+
         $pembayaran->update([
             'metode_pembayaran' => $d['metode_pembayaran'],
             'status_pembayaran' => 'Menunggu',
         ]);
 
-        return back()->with(
-            'success',
-            'Metode pembayaran diperbarui. Sistem ini masih menggunakan simulasi pembayaran.'
-        );
+        $customer = $p->customer;
+
+        $params = [
+            'transaction_details' => [
+                'order_id'     => $orderId,
+                'gross_amount' => $grossAmount,
+            ],
+            'customer_details' => [
+                'first_name' => $customer->nama ?? 'Customer',
+                'email'      => $customer->email ?? 'customer@example.com',
+                'phone'      => $customer->no_hp ?? '081234567890',
+            ],
+        ];
+
+        $snapToken = Snap::getSnapToken($params);
+
+        return view('pembayaran.snap', compact('p', 'pembayaran', 'snapToken', 'orderId'));
+    }
+
+    public function midtransCallback(Request $request)
+    {
+        Config::$serverKey    = config('midtrans.server_key');
+        Config::$isProduction = (bool) config('midtrans.is_production');
+        Config::$isSanitized  = (bool) config('midtrans.is_sanitized');
+        Config::$is3ds        = (bool) config('midtrans.is_3ds');
+
+        $notif = new Notification();
+
+        $transactionStatus = $notif->transaction_status;
+        $fraudStatus       = $notif->fraud_status;
+        $orderId           = $notif->order_id;
+
+        // Ambil id_pemesanan dari format SEWA-{id_pemesanan}-{timestamp}
+        $parts       = explode('-', $orderId);
+        $idPemesanan = $parts[1] ?? null;
+
+        $pesanan = Pemesanan::with('pembayaran')->find($idPemesanan);
+
+        if (!$pesanan || !$pesanan->pembayaran) {
+            return response()->json(['message' => 'Pesanan tidak ditemukan'], 404);
+        }
+
+        $pembayaran = $pesanan->pembayaran;
+
+        if ($transactionStatus === 'capture' && $fraudStatus === 'accept') {
+            $pembayaran->update([
+                'status_pembayaran' => 'Dibayar',
+                'tanggal_bayar'     => $pembayaran->tanggal_bayar ?? now(),
+            ]);
+            $pesanan->update(['status' => 'Menunggu Konfirmasi']);
+        } elseif ($transactionStatus === 'settlement') {
+            $pembayaran->update([
+                'status_pembayaran' => 'Dibayar',
+                'tanggal_bayar'     => $pembayaran->tanggal_bayar ?? now(),
+            ]);
+            $pesanan->update(['status' => 'Menunggu Konfirmasi']);
+        } elseif ($transactionStatus === 'pending') {
+            $pembayaran->update(['status_pembayaran' => 'Menunggu']);
+        } elseif (in_array($transactionStatus, ['deny', 'expire', 'cancel'])) {
+            $pembayaran->update(['status_pembayaran' => 'Ditolak']);
+        }
+
+        return response()->json(['message' => 'OK']);
     }
 
 
@@ -982,5 +1068,45 @@ public function updateArmadaStatus(Request $r, Armada $armada)
             'pemesananAktif',
             'pemesananMenunggu'
         ));
+    }
+
+    public function saveArmada(Request $r)
+    {
+        abort_unless(session('role') === 'admin', 403);
+
+        // Sesuaikan nama field berikut dengan input form admin & kolom di tabel Rental_kendaraan_armada
+        $d = $r->validate([
+            'nama_kendaraan' => 'required|string|max:120',
+            'tipe' => 'required|string|max:100',
+            'harga_sewa' => 'required|numeric|min:0',
+            'transmisi' => 'nullable|string|max:40',
+            'plat_nomor' => 'nullable|string|max:20',
+            'stok' => 'required|integer|min:0|max:1000',
+            'status_ketersediaan' => 'required|in:tersedia,disewa,perawatan',
+            'gambar' => 'nullable|string|max:1000',
+        ]);
+
+        if (!empty($d['gambar'])) {
+            $d['gambar'] = $this->formatGoogleDriveUrl($d['gambar']);
+        }
+
+        Armada::create($d);
+
+        return back()->with('success', 'Data armada berhasil ditambahkan.');
+    }
+
+    private function formatGoogleDriveUrl(string $url): string
+    {
+        // Format: https://drive.google.com/file/d/{FILE_ID}/view...
+        if (preg_match('~drive\.google\.com/file/d/([a-zA-Z0-9_-]+)~', $url, $matches)) {
+            return 'https://drive.google.com/thumbnail?id=' . $matches[1] . '&sz=w1000';
+        }
+
+        // Format: https://drive.google.com/open?id={FILE_ID} atau uc?id={FILE_ID}
+        if (preg_match('~[?&]id=([a-zA-Z0-9_-]+)~', $url, $matches)) {
+            return 'https://drive.google.com/thumbnail?id=' . $matches[1] . '&sz=w1000';
+        }
+
+        return $url;
     }
 }
