@@ -1,0 +1,3 @@
+<?php
+use Illuminate\Database\Migrations\Migration; use Illuminate\Database\Schema\Blueprint; use Illuminate\Support\Facades\Schema;
+return new class extends Migration { public function up(): void { Schema::create('Rental_kendaraan_pembayaran', function(Blueprint $t){ $t->id('id_pembayaran'); $t->foreignId('id_pemesanan')->constrained('Rental_kendaraan_pemesanan','id_pemesanan')->cascadeOnDelete(); $t->dateTime('tanggal_bayar')->nullable(); $t->string('metode_pembayaran',50); $t->string('status_pembayaran',30)->default('Menunggu'); $t->string('bukti_pembayaran')->nullable(); $t->timestamps(); }); } public function down(): void { Schema::dropIfExists('Rental_kendaraan_pembayaran'); }};
