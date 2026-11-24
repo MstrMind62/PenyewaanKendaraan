@@ -1,243 +1,291 @@
+
 @extends('layouts.app')
 
 @section('title', 'Daftar Armada')
 
 @section('content')
 <style>
-    :root {
-        --dash-bg: #080b12;
-        --dash-panel: #111b27;
-        --dash-panel-2: #142330;
-        --dash-teal: #42d6c5;
-        --dash-red: #8b2935;
-        --dash-text: #f1f5f9;
-        --dash-muted: #94a3b8;
-    }
-
-    .armada-container {
+    .armada-page {
+        background: #fafafa;
         min-height: 100vh;
-        padding: 35px 5%;
-        background: var(--dash-bg);
-        color: var(--dash-text);
+        padding: 55px 7%;
+        color: #252525;
     }
 
-    .armada-header {
+    .armada-heading {
         display: flex;
         justify-content: space-between;
-        align-items: flex-end;
-        margin-bottom: 30px;
+        align-items: end;
         flex-wrap: wrap;
-        gap: 15px;
+        gap: 20px;
+        margin-bottom: 35px;
     }
 
-    .armada-header h1 {
-        font-size: 30px;
-        font-weight: 700;
-        margin-bottom: 8px;
+    .armada-heading h1 {
+        font-size: 32px;
+        font-weight: 800;
+        margin: 0 0 8px;
+        color: #222;
     }
 
-    .armada-header p {
-        color: var(--dash-muted);
-        font-size: 14px;
+    .armada-heading p {
+        color: #777;
         margin: 0;
+        font-size: 15px;
     }
 
-    /* Styling Filter Dropdown */
-    .filter-form select {
-        background: var(--dash-panel);
-        color: var(--dash-text);
-        border: 1px solid #263747;
-        padding: 10px 16px;
-        border-radius: 8px;
+    .armada-filter select {
+        padding: 11px 15px;
+        border: 1px solid #e5e5e5;
+        border-radius: 9px;
+        background: white;
+        color: #333;
         font-size: 14px;
         outline: none;
         cursor: pointer;
-        transition: 0.2s;
     }
 
-    .filter-form select:focus {
-        border-color: var(--dash-teal);
+    .armada-filter select:focus {
+        border-color: #f07835;
     }
 
-    .grid {
+    .armada-alert {
+        padding: 13px 17px;
+        border-radius: 9px;
+        margin-bottom: 22px;
+        font-size: 14px;
+    }
+
+    .armada-alert.success {
+        background: #e8f7ed;
+        color: #247442;
+    }
+
+    .armada-alert.error {
+        background: #fdecec;
+        color: #a83232;
+    }
+
+    .armada-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 24px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 25px;
     }
 
-    .vehicle-card {
-        background: var(--dash-panel);
-        border: 1px solid #263747;
-        border-radius: 14px;
+    .armada-card {
+        background: white;
+        border: 1px solid #ededed;
+        border-radius: 13px;
         overflow: hidden;
-        transition: 0.3s;
+        transition: transform .25s, box-shadow .25s;
     }
 
-    .vehicle-card:hover {
+    .armada-card:hover {
         transform: translateY(-5px);
-        border-color: var(--dash-teal);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, .07);
     }
 
-    .vehicle-image {
+    .armada-image {
         width: 100%;
-        height: 190px;
+        height: 205px;
         object-fit: contain;
-        background: #ffffff;
-        padding: 10px;
+        padding: 12px;
+        background: #f5f5f5;
     }
 
-    .vehicle-content {
-        padding: 18px;
+    .armada-image-fallback {
+        width: 100%;
+        height: 205px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f5f5f5;
+        color: #999;
+        font-size: 14px;
     }
 
-    .vehicle-name {
+    .armada-content {
+        padding: 21px;
+    }
+
+    .armada-name {
         font-size: 19px;
-        font-weight: 700;
-        margin-bottom: 12px;
+        font-weight: 750;
+        margin: 0 0 13px;
+        color: #252525;
     }
 
-    .vehicle-status {
+    .armada-status {
         display: inline-block;
-        padding: 5px 12px;
+        padding: 6px 12px;
         border-radius: 20px;
         font-size: 12px;
-        font-weight: 600;
-        margin-bottom: 15px;
+        font-weight: 650;
+        margin-bottom: 17px;
     }
 
-    .status-available {
-        background: rgba(34, 197, 94, 0.15);
-        color: #4ade80;
+    .armada-status.available {
+        background: #e8f7ed;
+        color: #25834a;
     }
 
-    .status-unavailable {
-        background: rgba(239, 68, 68, 0.15);
-        color: #f87171;
+    .armada-status.unavailable {
+        background: #fdecec;
+        color: #c23b3b;
     }
 
-    .vehicle-info {
+    .armada-info {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 10px;
-        font-size: 13px;
-        color: var(--dash-muted);
         gap: 10px;
+        margin-bottom: 12px;
+        font-size: 13px;
     }
 
-    .vehicle-info strong {
-        color: var(--dash-text);
+    .armada-info span {
+        color: #888;
+    }
+
+    .armada-info strong {
+        color: #333;
         text-align: right;
+        font-weight: 600;
     }
 
-    .vehicle-price {
-        border-top: 1px solid #263747;
-        margin-top: 15px;
-        padding-top: 15px;
-        margin-bottom: 15px;
+    .armada-price {
+        border-top: 1px solid #eee;
+        margin-top: 17px;
+        padding-top: 16px;
+        margin-bottom: 17px;
     }
 
-    .vehicle-price small {
-        color: var(--dash-muted);
+    .armada-price small {
+        color: #888;
         font-size: 12px;
     }
 
-    .vehicle-price h3 {
-        color: var(--dash-teal);
-        font-size: 21px;
-        margin-top: 4px;
+    .armada-price h3 {
+        color: #ed7130;
+        font-size: 22px;
+        font-weight: 800;
+        margin: 5px 0 0;
     }
 
-    .booking-button {
+    .armada-booking-button {
         display: block;
         width: 100%;
         text-align: center;
-        padding: 11px;
+        padding: 12px;
         border-radius: 8px;
-        background: var(--dash-teal);
-        color: #08111b;
+        background: #f07835;
+        color: white;
+        font-size: 14px;
         font-weight: 700;
         text-decoration: none;
         border: none;
-        cursor: pointer;
-        transition: 0.2s;
+        transition: background .2s;
     }
 
-    .booking-button:hover {
-        background: #2bb9aa;
-        color: #08111b;
+    .armada-booking-button:hover {
+        background: #d96120;
+        color: white;
     }
 
-    .disabled-button {
+    .armada-disabled-button {
         display: block;
         width: 100%;
-        padding: 11px;
+        padding: 12px;
         text-align: center;
         border-radius: 8px;
-        background: #374151;
-        color: #9ca3af;
+        background: #eee;
+        color: #999;
+        font-size: 14px;
         font-weight: 600;
-        cursor: not-allowed;
     }
 
-    .empty-state {
-        text-align: center;
-        padding: 50px 20px;
-        color: var(--dash-muted);
-        background: var(--dash-panel);
-        border-radius: 12px;
+    .armada-empty {
         grid-column: 1 / -1;
+        background: white;
+        border: 1px solid #eee;
+        border-radius: 12px;
+        padding: 55px 20px;
+        text-align: center;
+        color: #888;
+    }
+
+    .armada-empty h3 {
+        color: #333;
+        margin-bottom: 8px;
+    }
+
+    @media (max-width: 950px) {
+        .armada-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
     }
 
     @media (max-width: 600px) {
-        .armada-container {
-            padding: 25px 4%;
+        .armada-page {
+            padding: 35px 5%;
         }
 
-        .armada-header h1 {
-            font-size: 24px;
+        .armada-heading h1 {
+            font-size: 26px;
+        }
+
+        .armada-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .armada-filter,
+        .armada-filter select {
+            width: 100%;
         }
     }
 </style>
 
-<div class="armada-container">
+<div class="armada-page">
 
-    <div class="armada-header">
+    <div class="armada-heading">
         <div>
             <h1>Daftar Armada</h1>
-            <p>Pilih kendaraan yang sesuai dengan kebutuhan perjalanan Anda.</p>
+            <p>Temukan kendaraan yang sesuai untuk perjalanan Anda.</p>
         </div>
 
-        <!-- Form Dropdown Filter Kategori -->
-        <form method="GET" action="{{ route('armada.index') }}" class="filter-form">
+        <form method="GET" action="{{ route('armada.index') }}" class="armada-filter">
             <select name="kategori" onchange="this.form.submit()">
                 <option value="">Semua Kategori</option>
-                <option value="Motor" {{ request('kategori') == 'Motor' ? 'selected' : '' }}>Kendaraan Motor</option>
-                <option value="Travel" {{ request('kategori') == 'Travel' ? 'selected' : '' }}>Kendaraan Travel / Mobil</option>
+                <option value="Motor" {{ request('kategori') == 'Motor' ? 'selected' : '' }}>
+                    Kendaraan Motor
+                </option>
+                <option value="Travel" {{ request('kategori') == 'Travel' ? 'selected' : '' }}>
+                    Kendaraan Travel / Mobil
+                </option>
             </select>
         </form>
     </div>
 
     @if(session('success'))
-        <div style="background:#14532d; color:#bbf7d0; padding:12px 16px; border-radius:8px; margin-bottom:20px;">
+        <div class="armada-alert success">
             {{ session('success') }}
         </div>
     @endif
 
     @if(session('error'))
-        <div style="background:#7f1d1d; color:#fecaca; padding:12px 16px; border-radius:8px; margin-bottom:20px;">
+        <div class="armada-alert error">
             {{ session('error') }}
         </div>
     @endif
 
-    <div class="grid">
+    <div class="armada-grid">
 
         @forelse($armadas as $a)
 
-            <div class="vehicle-card">
+            <div class="armada-card">
 
                 @if(!empty($a->gambar))
                     <img
-                        class="vehicle-image"
+                        class="armada-image"
                         src="{{ $a->gambar }}"
                         alt="{{ $a->nama_kendaraan }}"
                         loading="lazy"
@@ -245,53 +293,47 @@
                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
                     >
 
-                    <div
-                        class="vehicle-image"
-                        style="display:none; align-items:center; justify-content:center; color:#64748b;"
-                    >
+                    <div class="armada-image-fallback" style="display:none;">
                         Gambar gagal dimuat
                     </div>
                 @else
-                    <div
-                        class="vehicle-image"
-                        style="display:flex; align-items:center; justify-content:center; color:#64748b;"
-                    >
+                    <div class="armada-image-fallback">
                         Gambar belum tersedia
                     </div>
                 @endif
 
-                <div class="vehicle-content">
+                <div class="armada-content">
 
-                    <h2 class="vehicle-name">
+                    <h2 class="armada-name">
                         {{ $a->nama_kendaraan }}
                     </h2>
 
                     @if(strtolower($a->status_ketersediaan) === 'tersedia')
-                        <span class="vehicle-status status-available">
+                        <span class="armada-status available">
                             Tersedia
                         </span>
                     @else
-                        <span class="vehicle-status status-unavailable">
+                        <span class="armada-status unavailable">
                             Tidak Tersedia
                         </span>
                     @endif
 
-                    <div class="vehicle-info">
+                    <div class="armada-info">
                         <span>Tipe Kendaraan</span>
                         <strong>{{ $a->tipe }}</strong>
                     </div>
 
-                    <div class="vehicle-info">
+                    <div class="armada-info">
                         <span>Transmisi</span>
                         <strong>{{ $a->transmisi }}</strong>
                     </div>
 
-                    <div class="vehicle-info">
+                    <div class="armada-info">
                         <span>Plat Nomor</span>
                         <strong>{{ $a->plat_nomor }}</strong>
                     </div>
 
-                    <div class="vehicle-price">
+                    <div class="armada-price">
                         <small>Harga Sewa / Hari</small>
                         <h3>
                             Rp {{ number_format($a->harga_sewa, 0, ',', '.') }}
@@ -303,27 +345,27 @@
                         @if(session('role') === 'customer')
                             <a
                                 href="{{ route('booking.create', $a) }}"
-                                class="booking-button"
+                                class="armada-booking-button"
                             >
                                 Pesan Sekarang
                             </a>
 
                         @elseif(session('role') === 'admin')
-                            <span class="disabled-button">
+                            <span class="armada-disabled-button">
                                 Mode Admin
                             </span>
 
                         @else
                             <a
                                 href="{{ route('login') }}"
-                                class="booking-button"
+                                class="armada-booking-button"
                             >
                                 Login untuk Memesan
                             </a>
                         @endif
 
                     @else
-                        <span class="disabled-button">
+                        <span class="armada-disabled-button">
                             Kendaraan Tidak Tersedia
                         </span>
                     @endif
@@ -332,13 +374,12 @@
             </div>
 
         @empty
-            <div class="empty-state">
+            <div class="armada-empty">
                 <h3>Belum Ada Armada</h3>
-                <p>Data kendaraan untuk kategori ini belum tersedia.</p>
+                <p>Data kendaraan belum tersedia.</p>
             </div>
         @endforelse
 
     </div>
-
 </div>
 @endsection

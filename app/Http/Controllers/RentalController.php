@@ -532,7 +532,6 @@ class RentalController extends Controller
         return view('admin.armada', compact('armadas'));
     }
 
-    
 
     public function deleteArmada(Armada $armada)
     {

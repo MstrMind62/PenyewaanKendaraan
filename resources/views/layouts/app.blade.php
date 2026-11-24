@@ -5,127 +5,338 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>@yield('title', 'SewaKendaraan')</title>
+    <title>@yield('title', 'DriveEase - Rental Mobil')</title>
 
-   <style>
-    :root {
-        --app-bg: #080b12;
-        --app-panel: #111b27;
-        --app-accent: #48dfc5;
-        --app-text: #f4f7fb;
-        --app-muted: #a2adbb;
-        --app-border: rgba(255, 255, 255, 0.09);
-    }
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    * { box-sizing: border-box; }
-    html { min-height: 100%; }
-    
-    body {
-        margin: 0; 
-        min-height: 100vh;
-        font-family: 'DM Sans', "Segoe UI", Arial, sans-serif;
-        color: var(--app-text);
-        background: var(--app-bg);
-    }
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    a { color: var(--app-accent); text-decoration: none; }
+    <style>
+        :root {
+            --primary: #F28C28;
+            --primary-hover: #E47713;
 
-    /* HEADER */
-    .site-header {
-        position: relative; z-index: 10; width: 100%;
-        background: var(--app-bg);
-        border-bottom: 1px solid var(--app-border);
-    }
+            --background: #FFFFFF;
+            --surface: #F5F6F8;
 
-    .site-header-inner {
-        width: 100%; max-width: 1250px; min-height: 82px;
-        margin: 0 auto; padding: 15px 25px;
-        display: flex; align-items: center; justify-content: space-between; gap: 24px;
-    }
+            --text-dark: #202A35;
+            --text-muted: #6B7280;
 
-    .site-brand {
-        color: var(--app-text); font-size: 23px; font-weight: 850; letter-spacing: -.6px;
-    }
+            --border: #E5E7EB;
 
-    .site-nav { display: flex; align-items: center; gap: 24px; }
-    .site-nav a { color: var(--app-muted); font-size: 15px; font-weight: 600; transition: .2s; }
-    .site-nav a:hover { color: var(--app-accent); }
+            --success: #16A34A;
+            --danger: #DC3545;
+        }
 
-    .site-nav .site-register {
-        padding: 10px 17px; border-radius: 11px;
-        background: rgba(72, 223, 197, 0.08); 
-        color: var(--app-accent);
-        border: 1px solid rgba(72, 223, 197, 0.3);
-    }
-    
-    .site-nav .site-register:hover { 
-        background: var(--app-accent); color: #071311; 
-    }
+        * {
+            box-sizing: border-box;
+        }
 
-    /* KONTEN & FOOTER */
-    .site-content {
-        width: 100%; max-width: 1250px; margin: 0 auto;
-        min-height: calc(100vh - 155px); padding: 30px 25px;
-    }
+        html {
+            scroll-behavior: smooth;
+        }
 
-    .site-footer {
-        width: 100%; padding: 28px 20px; 
-        background: var(--app-bg);
-        border-top: 1px solid var(--app-border);
-        color: var(--app-muted); text-align: center; font-size: 13px;
-    }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'DM Sans', sans-serif;
+            background: var(--background);
+            color: var(--text-dark);
+        }
 
-    /* KOMPONEN UI */
-    .card {
-        padding: 24px; border: 1px solid var(--app-border); border-radius: 17px;
-        background: var(--app-panel);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, .2);
-    }
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
 
-    .muted { color: var(--app-muted); }
-    
-    .grid {
-        display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px;
-    }
+        /* =========================
+           NAVBAR
+        ========================= */
 
-    /* FORM & TOMBOL */
-    .field { margin-bottom: 17px; }
-    .field label { 
-        display: block; margin-bottom: 7px; font-size: 13px; font-weight: 600; color: var(--app-muted); 
-    }
-    
-    .field input, .field select, .field textarea {
-        width: 100%; min-height: 43px; padding: 10px 12px;
-        border: 1px solid rgba(255,255,255,.12); border-radius: 8px;
-        background: #101b28; color: var(--app-text); font: inherit; outline: none;
-    }
-    
-    .field input:focus, .field select:focus { border-color: var(--app-accent); }
+        .site-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            width: 100%;
+            background: rgba(255,255,255,0.96);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+        }
 
-    button {
-        padding: 11px 17px; border: 0; border-radius: 8px;
-        background: var(--app-accent); color: #071311; 
-        font-weight: 800; cursor: pointer; font: inherit; transition: .2s;
-    }
-    
-    button:hover { filter: brightness(1.1); }
-    
-    .danger { background: #dc3545 !important; color: #ffffff !important; }
-    
-    .tag {
-        display: inline-block; padding: 4px 10px; border-radius: 6px;
-        background: rgba(72, 223, 197, 0.15); color: var(--app-accent);
-        font-size: 11px; font-weight: 800; margin-bottom: 8px;
-    }
+        .site-header-inner {
+            max-width: 1200px;
+            min-height: 76px;
+            padding: 12px 24px;
+            margin: auto;
 
-    @media (max-width: 600px) {
-        .site-header-inner { min-height: 70px; padding: 12px 16px; }
-        .site-brand { font-size: 19px; }
-        .site-nav { gap: 13px; }
-        .site-nav a { font-size: 13px; }
-        .site-nav .site-register { padding: 8px 12px; }
-    }
-</style>
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 25px;
+        }
+
+        /* LOGO WEBSITE */
+        .site-brand {
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .site-brand img {
+            width: 55px;
+            height: 55px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .site-nav {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+        }
+
+        .site-nav a {
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .site-nav a:hover,
+        .site-nav a.active {
+            color: var(--primary);
+        }
+
+        .site-nav .site-register {
+            background: var(--primary);
+            color: white;
+            padding: 11px 20px;
+            border-radius: 9px;
+        }
+
+        .site-nav .site-register:hover {
+            background: var(--primary-hover);
+            color: white;
+        }
+
+        .site-nav form {
+            margin: 0;
+        }
+
+        /* =========================
+           BUTTON
+        ========================= */
+
+        .btn {
+            display: inline-flex
+            justify-content: center;
+            align-items: center;
+
+            padding: 12px 22px;
+            border: none;
+            border-radius: 9px;
+
+            background: var(--primary);
+            color: white;
+
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn.secondary {
+            background: white;
+            color: var(--text-dark);
+            border: 1px solid var(--border);
+        }
+
+        .btn.secondary:hover {
+            background: var(--surface);
+        }
+
+        button {
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        button.danger,
+        .danger {
+            background: var(--danger) !important;
+            color: white !important;
+        }
+
+        /* =========================
+           CONTENT
+        ========================= */
+
+        .site-content {
+            width: 100%;
+            max-width: 1200px;
+            min-height: calc(100vh - 160px);
+            padding: 35px 24px 60px;
+            margin: auto;
+        }
+
+        /* =========================
+           CARD
+        ========================= */
+
+        .card {
+            padding: 24px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.04);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(
+                auto-fit,
+                minmax(250px, 1fr)
+            );
+            gap: 22px;
+        }
+
+        .muted {
+            color: var(--text-muted);
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 6px 11px;
+            border-radius: 20px;
+
+            background: #FFF1E3;
+            color: #D97706;
+
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        /* =========================
+           FORM
+        ========================= */
+
+        .field {
+            margin-bottom: 18px;
+        }
+
+        .field label {
+            display: block;
+            margin-bottom: 8px;
+
+            color: var(--text-dark);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .field input,
+        .field select,
+        .field textarea {
+            width: 100%;
+            min-height: 45px;
+            padding: 11px 13px;
+
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+
+            color: var(--text-dark);
+            font-family: inherit;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        .field input:focus,
+        .field select:focus,
+        .field textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(242,140,40,0.12);
+        }
+
+        /* =========================
+           PRICE
+        ========================= */
+
+        .price {
+            color: var(--primary);
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .price small {
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* =========================
+           FOOTER
+        ========================= */
+
+        .site-footer {
+            width: 100%;
+            padding: 30px 20px;
+
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+
+            color: var(--text-muted);
+            text-align: center;
+            font-size: 13px;
+        }
+
+        /* LOGO FOOTER */
+        .footer-logo {
+            width: 65px;
+            height: 65px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto 12px;
+        }
+
+        /* =========================
+           RESPONSIVE
+        ========================= */
+
+        @media(max-width: 700px) {
+
+            .site-header-inner {
+                padding: 14px 16px;
+                min-height: auto;
+                flex-wrap: wrap;
+            }
+
+            .site-brand img {
+                width: 48px;
+                height: 48px;
+            }
+
+            .site-nav {
+                width: 100%;
+                gap: 15px;
+                flex-wrap: wrap;
+            }
+
+            .site-nav a {
+                font-size: 12px;
+            }
+
+            .site-content {
+                padding: 25px 16px 45px;
+            }
+        }
+    </style>
+
+    @stack('styles')
 </head>
 
 <body>
@@ -134,56 +345,104 @@
         $isLoginPage = request()->routeIs('login');
     @endphp
 
-    {{-- Header hanya ditampilkan di halaman selain login --}}
     @unless($isLoginPage)
+
         <header class="site-header">
+
             <div class="site-header-inner">
+
+                <!-- LOGO NAVBAR -->
                 <a href="{{ route('home') }}" class="site-brand">
-                    SewaKendaraan
+                    <img src="{{ asset('images/logo_sk.jpeg') }}"
+                         alt="Logo SK Rental Mobil">
                 </a>
 
                 <nav class="site-nav">
-    <a href="{{ route('armada.index') }}">Armada</a>
 
-    {{-- Cek jika yang login adalah customer --}}
-    @if(session('role') === 'customer')
-        <a href="{{ route('customer.orders') }}">Pesanan Saya</a>
-        <a href="{{ route('customer.profile') }}">Profil Saya</a>
-        <form method="POST" action="{{ route('logout') }}" style="display: inline-block;">
-            @csrf
-            {{-- Menggunakan class "danger" bawaan CSS Anda agar tombol berwarna merah --}}
-            <button type="submit" class="danger" style="padding: 10px 15px;">
-                Logout ({{ session('user_name') }})
-            </button>
-        </form>
+                    <a href="{{ route('home') }}"
+                       class="{{ request()->routeIs('home') ? 'active' : '' }}">
+                        Beranda
+                    </a>
 
-    {{-- Cek jika yang login kebetulan admin (akses nyasar) --}}
-    @elseif(session('role') === 'admin')
-        <a href="{{ route('admin.dashboard') }}">Dashboard Admin</a>
+                    <a href="{{ route('armada.index') }}"
+                       class="{{ request()->routeIs('armada.*') || request()->routeIs('booking.create') ? 'active' : '' }}">
+                        Daftar Mobil
+                    </a>
 
-    {{-- Tampilan untuk pengunjung yang belum login --}}
-    @else
-        <a href="{{ route('login') }}">Login</a>
-        <a href="{{ route('register') }}" class="site-register">
-            Daftar
-        </a>
-    @endif
-</nav>
+                    @if(session('role') === 'customer')
+
+                        <a href="{{ route('customer.orders') }}">
+                            Pesanan Saya
+                        </a>
+
+                        <a href="{{ route('customer.profile') }}">
+                            Profil Saya
+                        </a>
+
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+
+                            <button type="submit"
+                                    class="danger"
+                                    style="padding: 10px 15px; border-radius: 8px; border: none;">
+                                Logout
+                            </button>
+                        </form>
+
+                    @elseif(session('role') === 'admin')
+
+                        <a href="{{ route('admin.dashboard') }}">
+                            Dashboard Admin
+                        </a>
+
+                    @else
+
+                        <a href="{{ route('login') }}">
+                            Masuk
+                        </a>
+
+                        <a href="{{ route('register') }}" class="site-register">
+                            Daftar
+                        </a>
+
+                    @endif
+
+                </nav>
+
             </div>
+
         </header>
+
     @endunless
 
-    {{-- Konten halaman --}}
     <main class="site-content">
         @yield('content')
     </main>
 
-    {{-- Footer hanya ditampilkan di halaman selain login --}}
     @unless($isLoginPage)
+
         <footer class="site-footer">
-            Sistem Informasi Penyewaan Kendaraan · Proyek RPL
+
+            <!-- LOGO FOOTER -->
+            <img src="{{ asset('images/logo_sk.jpeg') }}"
+                 alt="Logo SK Rental Mobil"
+                 class="footer-logo">
+
+            <p>
+                Solusi penyewaan kendaraan yang mudah,
+                nyaman, dan terpercaya.
+            </p>
+
+            <small>
+                © {{ date('Y') }} SK.
+                All Rights Reserved.
+            </small>
+
         </footer>
+
     @endunless
+
+    @stack('scripts')
 
 </body>
 </html>
