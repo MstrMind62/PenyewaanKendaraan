@@ -572,6 +572,17 @@
                     </select>
                 </div>
 
+                <div class="fleet-field">
+                    <label>Plat nomor</label>
+                    <input
+                        type="text"
+                        name="plat_nomor"
+                        value="{{ old('plat_nomor') }}"
+                        placeholder="Contoh: AB 1234 XY"
+                        maxlength="20"
+                    >
+                </div>
+
                 <div class="fleet-field span-2">
                     <label>Link Gambar (Google Drive)</label>
                     <input

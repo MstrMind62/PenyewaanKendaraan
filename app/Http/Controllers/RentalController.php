@@ -993,9 +993,11 @@ public function updateArmadaStatus(Request $r, Armada $armada)
             'nama_kendaraan' => 'required|string|max:120',
             'tipe' => 'required|string|max:100',
             'harga_sewa' => 'required|numeric|min:0',
+            'transmisi' => 'nullable|string|max:40',
+            'plat_nomor' => 'nullable|string|max:20',
             'stok' => 'required|integer|min:0|max:1000',
             'status_ketersediaan' => 'required|in:tersedia,disewa,perawatan',
-            'gambar' => 'nullable|url|max:1000',
+            'gambar' => 'nullable|string|max:1000',
         ]);
 
         if (!empty($d['gambar'])) {
