@@ -190,6 +190,12 @@
                     Masuk menggunakan akun administrator untuk melanjutkan.
                 </p>
 
+                @if (session('role') === 'customer')
+                    <div class="login-error">
+                        Kamu tidak memiliki akses admin. Silakan masuk menggunakan akun Administrator.
+                    </div>
+                @endif
+
                 @if ($errors->any())
                     <div class="login-error">{{ $errors->first() }}</div>
                 @endif

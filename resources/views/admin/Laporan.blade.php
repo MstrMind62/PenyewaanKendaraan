@@ -406,7 +406,9 @@
                         <th>Kendaraan</th>
                         <th>Tanggal Sewa</th>
                         <th>Durasi</th>
-                        <th>Total Biaya</th>
+                        <th>Pendapatan Armada</th>
+                        <th>Fee Sopir</th>
+                        <th>Total Pendapatan</th>
                         <th>Pembayaran</th>
                         <th>Status</th>
                     </tr>
@@ -448,11 +450,21 @@
                             </td>
 
                             <td>
-                                {{ $pesanan->durasi }} hari
+                                {{ $pesanan->jumlah_hari_laporan ?? $pesanan->durasi }} hari
                             </td>
 
                             <td>
-                                Rp {{ number_format($pesanan->total_biaya ?? 0, 0, ',', '.') }}
+                                Rp {{ number_format($pesanan->pendapatan_armada_laporan ?? 0, 0, ',', '.') }}
+                            </td>
+
+                            <td>
+                                Rp {{ number_format($pesanan->fee_supir_laporan ?? 0, 0, ',', '.') }}
+                            </td>
+
+                            <td>
+                                <strong>
+                                    Rp {{ number_format($pesanan->total_pendapatan_laporan ?? 0, 0, ',', '.') }}
+                                </strong>
                             </td>
 
                             <td>
@@ -469,7 +481,7 @@
                     @empty
 
                         <tr>
-                            <td colspan="9" class="empty-report">
+                            <td colspan="11" class="empty-report">
                                 Belum ada data penyewaan.
                             </td>
                         </tr>

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Admin;
+use App\Models\Customer;
 use App\Models\Pemesanan;
 use App\Models\Sopir;
 use Illuminate\Database\Eloquent\Builder;
@@ -28,9 +30,23 @@ class SupirController extends Controller
 
         $sopir = Sopir::where('email', $credentials['email'])->first();
 
+        if (! $sopir) {
+            if (
+                Customer::where('email', $credentials['email'])->exists()
+                || Admin::where('email', $credentials['email'])->exists()
+            ) {
+                return back()
+                    ->withErrors(['email' => 'Kamu tidak memiliki akses. Akun ini bukan akun Supir.'])
+                    ->onlyInput('email');
+            }
+
+            return back()
+                ->withErrors(['email' => 'Email atau password salah, atau akun tidak aktif.'])
+                ->onlyInput('email');
+        }
+
         if (
-            ! $sopir
-            || ! $sopir->password
+            ! $sopir->password
             || $sopir->status === 'nonaktif'
             || ! Hash::check($credentials['password'], $sopir->password)
         ) {

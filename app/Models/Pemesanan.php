@@ -73,7 +73,7 @@ class Pemesanan extends Model
     public function tanggalPemesanan()
     {
         return $this->hasMany(
-            tanggalPemesanan::class,
+            TanggalPemesanan::class,
             'id_pemesanan',
             'id_pemesanan'
         )->orderBy('tanggal_sewa');

@@ -27,7 +27,9 @@ class RentalController extends Controller
             ->take(6)
             ->get();
 
-        return view('home', compact('armadas'));
+        $allArmadas = Armada::orderBy('nama_kendaraan')->get();
+
+        return view('home', compact('armadas', 'allArmadas'));
     }
 
     public function registerForm()
@@ -74,25 +76,11 @@ class RentalController extends Controller
             'password' => 'required|string',
         ]);
 
-        $a = Admin::where('email', $d['email'])->first();
-
-        if ($a && Hash::check($d['password'], $a->password)) {
-            $r->session()->regenerate();
-
-            session([
-                'user_id' => $a->id_admin,
-                'user_name' => $a->nama,
-                'role' => 'admin',
-            ]);
-
-            return redirect()->route('admin.dashboard');
-        }
-
         $c = Customer::where('email', $d['email'])->first();
 
         if (!$c || !Hash::check($d['password'], $c->password)) {
             return back()
-                ->withErrors(['email' => 'Email atau password salah.'])
+                ->withErrors(['email' => 'Email atau password salah atau akun belum terdaftar.'])
                 ->onlyInput('email');
         }
 
@@ -117,9 +105,25 @@ class RentalController extends Controller
         return redirect()->route('home');
     }
 
-    public function armadas()
+    public function armadas(Request $r)
     {
-        $armadas = Armada::orderBy('nama_kendaraan')->get();
+        $query = Armada::query();
+
+        if ($r->filled('kategori')) {
+            $kategori = $r->string('kategori')->toString();
+            $query->where('tipe', 'like', '%' . $kategori . '%');
+        }
+
+        if ($r->filled('q')) {
+            $search = $r->string('q')->toString();
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_kendaraan', 'like', '%' . $search . '%')
+                  ->orWhere('tipe', 'like', '%' . $search . '%')
+                  ->orWhere('transmisi', 'like', '%' . $search . '%');
+            });
+        }
+
+        $armadas = $query->orderBy('nama_kendaraan')->get();
 
         return view('armada.index', compact('armadas'));
     }
@@ -401,6 +405,10 @@ class RentalController extends Controller
 
     public function adminLoginForm()
     {
+        if (session('role') === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
+
         return view('admin.login');
     }
 
@@ -413,7 +421,23 @@ class RentalController extends Controller
 
         $admin = Admin::where('email', $credentials['email'])->first();
 
-        if (!$admin || !Hash::check($credentials['password'], $admin->password)) {
+        if (!$admin) {
+            if (Customer::where('email', $credentials['email'])->exists()) {
+                return back()
+                    ->withErrors([
+                        'email' => 'Kamu tidak memiliki akses. Akun ini bukan akun Admin.',
+                    ])
+                    ->onlyInput('email');
+            }
+
+            return back()
+                ->withErrors([
+                    'email' => 'Email atau password Admin salah.',
+                ])
+                ->onlyInput('email');
+        }
+
+        if (!Hash::check($credentials['password'], $admin->password)) {
             return back()
                 ->withErrors([
                     'email' => 'Email atau password Admin salah.',
@@ -1052,117 +1076,139 @@ public function updateArmadaStatus(Request $r, Armada $armada)
             'status' => 'nullable|in:Menunggu Pembayaran,Menunggu Konfirmasi,Dikonfirmasi,Dalam Perjalanan,Selesai,Dibatalkan',
         ]);
 
+        // Laporan keuangan hanya memuat pesanan yang pembayarannya sudah Dibayar.
         $query = Pemesanan::with([
             'customer',
             'armada',
             'sopir',
             'pembayaran',
             'tanggalPemesanan',
-        ]);
+        ])->whereHas('pembayaran', function ($q) {
+            $q->where('status_pembayaran', 'Dibayar');
+        });
 
-        // Filter tanggal menggunakan semua tanggal pilihan customer.
-        // Pesanan lama tanpa detail tanggal menggunakan tanggal_sewa utama.
-        if (
-            !empty($filters['tanggal_mulai']) ||
-            !empty($filters['tanggal_selesai'])
-        ) {
+        // Filter tanggal berdasarkan tanggal-tanggal sewa yang benar-benar dipilih.
+        // Pesanan lama yang belum memiliki detail tanggal memakai tanggal_sewa + durasi.
+        if (!empty($filters['tanggal_mulai']) || !empty($filters['tanggal_selesai'])) {
             $tanggalMulai = $filters['tanggal_mulai'] ?? null;
             $tanggalSelesai = $filters['tanggal_selesai'] ?? null;
 
             $query->where(function ($q) use ($tanggalMulai, $tanggalSelesai) {
-                $q->whereHas(
-                    'tanggalPemesanan',
-                    function ($tanggalQuery) use ($tanggalMulai, $tanggalSelesai) {
-                        if ($tanggalMulai) {
-                            $tanggalQuery->whereDate(
-                                'tanggal_sewa',
-                                '>=',
-                                $tanggalMulai
-                            );
-                        }
-
-                        if ($tanggalSelesai) {
-                            $tanggalQuery->whereDate(
-                                'tanggal_sewa',
-                                '<=',
-                                $tanggalSelesai
-                            );
-                        }
-                    }
-                );
-
-                $q->orWhere(function ($legacyQuery) use (
-                    $tanggalMulai,
-                    $tanggalSelesai
-                ) {
-                    $legacyQuery->whereDoesntHave('tanggalPemesanan');
-
+                $q->whereHas('tanggalPemesanan', function ($tanggalQuery) use ($tanggalMulai, $tanggalSelesai) {
                     if ($tanggalMulai) {
-                        $legacyQuery->whereDate(
-                            'tanggal_sewa',
-                            '>=',
-                            $tanggalMulai
-                        );
+                        $tanggalQuery->whereDate('tanggal_sewa', '>=', $tanggalMulai);
                     }
-
                     if ($tanggalSelesai) {
-                        $legacyQuery->whereDate(
-                            'tanggal_sewa',
-                            '<=',
-                            $tanggalSelesai
+                        $tanggalQuery->whereDate('tanggal_sewa', '<=', $tanggalSelesai);
+                    }
+                });
+
+                $q->orWhere(function ($legacyQuery) use ($tanggalMulai, $tanggalSelesai) {
+                    $legacyQuery->whereDoesntHave('tanggalPemesanan');
+                    if ($tanggalSelesai) {
+                        $legacyQuery->whereDate('tanggal_sewa', '<=', $tanggalSelesai);
+                    }
+                    if ($tanggalMulai) {
+                        // Pesanan lama tetap masuk jika masa sewanya beririsan dengan periode.
+                        $legacyQuery->whereRaw(
+                            'DATE_ADD(tanggal_sewa, INTERVAL GREATEST(durasi, 1) - 1 DAY) >= ?',
+                            [$tanggalMulai]
                         );
                     }
                 });
             });
         }
 
+        // Filter status penyewaan bersifat tambahan; syarat pembayaran Dibayar tetap berlaku.
         if (!empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }
 
-        $orders = $query
-            ->orderBy('id_pemesanan', 'desc')
-            ->get();
+        $orders = $query->orderBy('id_pemesanan', 'desc')->get();
+
+        $totalFeeArmada = 0;
+        $totalFeeSupir = 0;
+        $totalPendapatan = 0;
+
+        foreach ($orders as $order) {
+            // Ambil semua tanggal sewa dari tabel detail.
+            $semuaTanggal = $order->tanggalPemesanan
+                ->map(function ($detail) {
+                    return \Carbon\Carbon::parse($detail->tanggal_sewa)->toDateString();
+                })
+                ->unique()
+                ->sort()
+                ->values();
+
+            // Data lama: bentuk tanggal dari tanggal_sewa dan durasi jika detail kosong.
+            if ($semuaTanggal->isEmpty() && $order->tanggal_sewa) {
+                $tanggalAwal = \Carbon\Carbon::parse($order->tanggal_sewa);
+                $durasi = max(1, (int) ($order->durasi ?? 1));
+
+                for ($i = 0; $i < $durasi; $i++) {
+                    $semuaTanggal->push($tanggalAwal->copy()->addDays($i)->toDateString());
+                }
+            }
+
+            $jumlahHariTotal = max(1, $semuaTanggal->count());
+
+            // Tentukan berapa hari dari pesanan ini yang masuk periode laporan.
+            $tanggalDalamPeriode = $semuaTanggal->filter(function ($tanggal) use ($filters) {
+                if (!empty($filters['tanggal_mulai']) && $tanggal < $filters['tanggal_mulai']) {
+                    return false;
+                }
+                if (!empty($filters['tanggal_selesai']) && $tanggal > $filters['tanggal_selesai']) {
+                    return false;
+                }
+                return true;
+            });
+
+            $jumlahHariLaporan = $tanggalDalamPeriode->count();
+            if ($jumlahHariLaporan === 0) {
+                continue;
+            }
+
+            // Harga saat transaksi dibuat: (harga armada + fee sopir jika dipilih) x hari.
+            // Fee sopir pada sistem ini adalah Rp150.000 per hari.
+            $totalBiayaPesanan = (float) ($order->total_biaya ?? 0);
+            $feeSupirPerHari = $order->menggunakan_sopir ? 150000 : 0;
+            $feeSupirSeluruhHari = $feeSupirPerHari * $jumlahHariTotal;
+
+            // Karena total_biaya saat pemesanan hanya terdiri dari armada + sopir,
+            // pendapatan armada adalah total transaksi dikurangi seluruh fee sopir.
+            $pendapatanArmadaSeluruhHari = max(0, $totalBiayaPesanan - $feeSupirSeluruhHari);
+
+            // Jika filter hanya mengambil sebagian tanggal, alokasikan nilai per hari.
+            $pendapatanArmadaPeriode = (int) round(
+                $pendapatanArmadaSeluruhHari * $jumlahHariLaporan / $jumlahHariTotal
+            );
+            $feeSupirPeriode = $feeSupirPerHari * $jumlahHariLaporan;
+            $totalPendapatanPeriode = $pendapatanArmadaPeriode + $feeSupirPeriode;
+
+            // Nilai khusus untuk ditampilkan pada tabel laporan.
+            $order->setAttribute('pendapatan_armada_laporan', $pendapatanArmadaPeriode);
+            $order->setAttribute('fee_supir_laporan', $feeSupirPeriode);
+            $order->setAttribute('total_pendapatan_laporan', $totalPendapatanPeriode);
+            $order->setAttribute('jumlah_hari_laporan', $jumlahHariLaporan);
+
+            $totalFeeArmada += $pendapatanArmadaPeriode;
+            $totalFeeSupir += $feeSupirPeriode;
+            $totalPendapatan += $totalPendapatanPeriode;
+        }
+
+        // Pastikan jumlah pesanan sesuai data yang benar-benar ditampilkan pada laporan.
+        $orders = $orders->filter(function ($order) {
+            return $order->getAttribute('total_pendapatan_laporan') !== null;
+        })->values();
 
         $totalPemesanan = $orders->count();
-
-        // Ringkasan pendapatan hanya menghitung transaksi yang sudah dibayar.
-        $pesananDibayar = $orders->filter(function ($order) {
-            return $order->pembayaran &&
-                $order->pembayaran->status_pembayaran === 'Dibayar';
-        });
-
-        // Total keseluruhan tetap menggunakan total_biaya yang tersimpan.
-        $totalPendapatan = $pesananDibayar->sum('total_biaya');
-
-        // Biaya sopir Rp150.000 dikalikan jumlah tanggal sewa yang dipilih.
-        $totalFeeSupir = $pesananDibayar->sum(function ($order) {
-            if (!$order->menggunakan_sopir) {
-                return 0;
-            }
-
-            $jumlahHari = $order->tanggalPemesanan->count();
-
-            // Pemesanan lama tanpa detail tanggal menggunakan nilai durasi.
-            if ($jumlahHari < 1) {
-                $jumlahHari = (int) ($order->durasi ?? 0);
-            }
-
-            return 150000 * $jumlahHari;
-        });
-
-        // Fee armada adalah total keseluruhan dikurangi fee sopir.
-        $totalFeeArmada = $totalPendapatan - $totalFeeSupir;
 
         $pemesananAktif = $orders
             ->whereIn('status', ['Dikonfirmasi', 'Dalam Perjalanan'])
             ->count();
 
         $pemesananMenunggu = $orders
-            ->whereIn('status', [
-                'Menunggu Pembayaran',
-                'Menunggu Konfirmasi',
-            ])
+            ->whereIn('status', ['Menunggu Pembayaran', 'Menunggu Konfirmasi'])
             ->count();
 
         return view('admin.laporan', compact(

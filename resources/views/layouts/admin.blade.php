@@ -686,5 +686,9 @@
     @endif
 
     @stack('scripts')
+
+    <div style="--loader-gradient: linear-gradient(90deg, #48dfc5, #60a5fa); --loader-backdrop: rgba(8, 11, 16, 0.72); --loader-card-bg: #101720; --loader-card-border: rgba(255,255,255,0.10); --loader-track: #1e293b; --loader-accent: #48dfc5; --loader-accent-2: #60a5fa; --loader-text: #f3f6fa;">
+        @include('partials.page-loader')
+    </div>
 </body>
 </html>

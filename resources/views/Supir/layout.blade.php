@@ -1298,5 +1298,8 @@
 
 @endif
 
+    <div style="--loader-gradient: linear-gradient(90deg, #14b8a6, #60a5fa); --loader-backdrop: rgba(7, 9, 13, 0.72); --loader-card-bg: #0e1219; --loader-card-border: #202936; --loader-track: #1e293b; --loader-accent: #14b8a6; --loader-accent-2: #60a5fa; --loader-text: #f4f7fb;">
+        @include('partials.page-loader')
+    </div>
 </body>
 </html>

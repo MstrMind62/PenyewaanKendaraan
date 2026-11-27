@@ -366,7 +366,7 @@
 
                     <a href="{{ route('armada.index') }}"
                        class="{{ request()->routeIs('armada.*') || request()->routeIs('booking.create') ? 'active' : '' }}">
-                        Daftar Mobil
+                        Daftar Kendaraan
                     </a>
 
                     @if(session('role') === 'customer')
@@ -443,6 +443,8 @@
     @endunless
 
     @stack('scripts')
+
+    @include('partials.page-loader')
 
 </body>
 </html>

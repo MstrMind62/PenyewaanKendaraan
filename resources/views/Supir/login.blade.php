@@ -10,6 +10,7 @@
     <section class="login-form-wrap"><div class="login-card">
         <div class="brand"><span class="brand-mark">R</span><span><span class="brand-name">RentDrive</span><span class="brand-sub">Driver portal</span></span></div>
         <div class="eyebrow">SELAMAT DATANG KEMBALI</div><h2>Login Supir</h2><p class="login-intro">Masuk untuk melihat tugas perjalanan kamu.</p>
+        @if(session('role') && session('role') !== 'supir')<div class="alert alert-error">Kamu tidak memiliki akses supir. Silakan masuk menggunakan akun Supir.</div>@endif
         @if($errors->any())<div class="alert alert-error">{{ $errors->first() }}</div>@endif
         <form method="POST" action="{{ route('supir.login.store') }}">
             @csrf

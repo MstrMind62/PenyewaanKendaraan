@@ -53,6 +53,8 @@ Route::post('/admin/sopir', [RentalController::class, 'saveDriver'])->name('admi
 Route::delete('/admin/sopir/{sopir}', [RentalController::class, 'deleteDriver'])->name('admin.sopir.delete');
 Route::get('/admin/laporan', [RentalController::class, 'rentalReports'])->name('admin.laporan');
 
+Route::redirect('/Supir', '/supir');
+
 Route::prefix('supir')->name('supir.')->group(function () {
     Route::get('/login', [SupirController::class, 'loginForm'])->name('login');
     Route::post('/login', [SupirController::class, 'login'])->name('login.store');
