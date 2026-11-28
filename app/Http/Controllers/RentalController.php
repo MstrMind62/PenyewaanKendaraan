@@ -23,6 +23,7 @@ class RentalController extends Controller
     public function home()
     {
         $armadas = Armada::where('status_ketersediaan', 'tersedia')
+            ->where('stok', '>', 0)
             ->orderBy('id_armada', 'desc')
             ->take(6)
             ->get();
@@ -727,6 +728,23 @@ public function updateArmadaStatus(Request $r, Armada $armada)
         ]);
 
         DB::transaction(function () use ($d, $p) {
+            $statusBerjalan = ['Dikonfirmasi', 'Dalam Perjalanan', 'Selesai'];
+            $statusPembayaranForm = $d['status_pembayaran'] ?? null;
+            $pembayaranSaatIni = $p->pembayaran()->first();
+            $statusPembayaranEfektif = $statusPembayaranForm ?? ($pembayaranSaatIni->status_pembayaran ?? null);
+
+            if (in_array($d['status'], $statusBerjalan, true) && $statusPembayaranEfektif !== 'Dibayar') {
+                throw ValidationException::withMessages([
+                    'status' => 'Pesanan harus memiliki pembayaran berstatus Dibayar sebelum dikonfirmasi.',
+                ]);
+            }
+
+            if ($d['status'] !== 'Dibatalkan' && $statusPembayaranEfektif !== 'Dibayar' && !empty($d['id_sopir'])) {
+                throw ValidationException::withMessages([
+                    'id_sopir' => 'Supir hanya dapat ditugaskan setelah pembayaran dikonfirmasi.',
+                ]);
+            }
+
             // Kunci data armada.
             $armada = Armada::where(
                 'id_armada',
@@ -742,6 +760,21 @@ public function updateArmadaStatus(Request $r, Armada $armada)
             )
                 ->lockForUpdate()
                 ->firstOrFail();
+
+            $transisiDiizinkan = [
+                'Menunggu Pembayaran' => ['Menunggu Pembayaran', 'Menunggu Konfirmasi', 'Dibatalkan'],
+                'Menunggu Konfirmasi' => ['Menunggu Konfirmasi', 'Dikonfirmasi', 'Dibatalkan'],
+                'Dikonfirmasi' => ['Dikonfirmasi', 'Dalam Perjalanan', 'Dibatalkan'],
+                'Dalam Perjalanan' => ['Dalam Perjalanan', 'Selesai', 'Dibatalkan'],
+                'Selesai' => ['Selesai'],
+                'Dibatalkan' => ['Dibatalkan', 'Menunggu Pembayaran', 'Menunggu Konfirmasi'],
+            ];
+
+            if (!in_array($d['status'], $transisiDiizinkan[$pesanan->status] ?? [], true)) {
+                throw ValidationException::withMessages([
+                    'status' => 'Perubahan status pesanan tidak sesuai alur proses.',
+                ]);
+            }
 
             // Jika pesanan dibatalkan lalu diaktifkan kembali,
             // periksa ketersediaan stok pada setiap tanggal.
@@ -829,11 +862,34 @@ public function updateArmadaStatus(Request $r, Armada $armada)
                 ]);
             }
 
-            // Perbarui status pesanan dan sopir.
+            // Pesanan dibatalkan tidak boleh tetap memiliki penugasan sopir.
+            $idSopirLama = $pesanan->id_sopir;
+            $idSopirBaru = $d['status'] === 'Dibatalkan'
+                ? null
+                : (array_key_exists('id_sopir', $d) ? ($d['id_sopir'] ?: null) : $pesanan->id_sopir);
+
             $pesanan->update([
                 'status' => $d['status'],
-                'id_sopir' => array_key_exists('id_sopir', $d) ? ($d['id_sopir'] ?: null) : $pesanan->id_sopir,
+                'id_sopir' => $idSopirBaru,
             ]);
+
+            if ($idSopirBaru) {
+                Sopir::where('id_sopir', $idSopirBaru)->update([
+                    'status' => in_array($d['status'], ['Dikonfirmasi', 'Dalam Perjalanan'], true)
+                        ? 'bertugas'
+                        : 'tersedia',
+                ]);
+            }
+
+            if ($idSopirLama && (int) $idSopirLama !== (int) $idSopirBaru) {
+                $masihBertugas = Pemesanan::where('id_sopir', $idSopirLama)
+                    ->whereIn('status', ['Dikonfirmasi', 'Dalam Perjalanan'])
+                    ->exists();
+
+                if (!$masihBertugas) {
+                    Sopir::where('id_sopir', $idSopirLama)->update(['status' => 'tersedia']);
+                }
+            }
 
             // Perbarui status pembayaran jika dikirim dari form admin.
             if (isset($d['status_pembayaran'])) {
@@ -1060,6 +1116,10 @@ public function updateArmadaStatus(Request $r, Armada $armada)
             $pembayaran->update(['status_pembayaran' => 'Menunggu']);
         } elseif (in_array($transactionStatus, ['deny', 'expire', 'cancel'])) {
             $pembayaran->update(['status_pembayaran' => 'Ditolak']);
+            $pesanan->update([
+                'status' => 'Dibatalkan',
+                'id_sopir' => null,
+            ]);
         }
 
         return response()->json(['message' => 'OK']);
@@ -1108,13 +1168,8 @@ public function updateArmadaStatus(Request $r, Armada $armada)
                     if ($tanggalSelesai) {
                         $legacyQuery->whereDate('tanggal_sewa', '<=', $tanggalSelesai);
                     }
-                    if ($tanggalMulai) {
-                        // Pesanan lama tetap masuk jika masa sewanya beririsan dengan periode.
-                        $legacyQuery->whereRaw(
-                            'DATE_ADD(tanggal_sewa, INTERVAL GREATEST(durasi, 1) - 1 DAY) >= ?',
-                            [$tanggalMulai]
-                        );
-                    }
+                    // Filter tanggal mulai dilakukan setelah query menggunakan Carbon.
+                    // Ini menghindari DATE_ADD/INTERVAL yang berbeda antar database.
                 });
             });
         }

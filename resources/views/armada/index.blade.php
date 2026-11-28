@@ -480,7 +480,7 @@
                         {{ $a->tipe ?: 'Kendaraan' }}
                     </span>
 
-                    @if(strtolower($a->status_ketersediaan) === 'tersedia')
+                    @if(strtolower($a->status_ketersediaan) === 'tersedia' && (int) ($a->stok ?? 0) > 0)
                         <span class="armada-status-badge available">
                             <span class="status-dot"></span> Tersedia
                         </span>
@@ -524,7 +524,7 @@
                             <small>Per hari</small>
                         </div>
 
-                        @if(strtolower($a->status_ketersediaan) === 'tersedia')
+                        @if(strtolower($a->status_ketersediaan) === 'tersedia' && (int) ($a->stok ?? 0) > 0)
 
                             @if(session('role') === 'customer')
                                 <a href="{{ route('booking.create', $a) }}" class="armada-btn armada-btn-primary">

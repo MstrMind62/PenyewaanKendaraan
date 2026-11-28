@@ -71,7 +71,78 @@
 
     /* ---------- ORDERS LIST ---------- */
 
+    .orders-summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 16px;
+        padding: 16px 20px;
+        border: 1px solid rgba(242,140,40,0.18);
+        border-radius: 14px;
+        background: rgba(255,255,255,0.78);
+        box-shadow: 0 5px 18px rgba(32,42,53,0.04);
+    }
+
+    .orders-summary strong {
+        display: block;
+        color: #202A35;
+        font-size: 15px;
+    }
+
+    .orders-summary span {
+        display: block;
+        margin-top: 3px;
+        color: #6B7280;
+        font-size: 12px;
+    }
+
+    .orders-page-size {
+        flex-shrink: 0;
+        padding: 8px 12px;
+        border-radius: 9px;
+        background: #FFF1E3;
+        color: #B45309;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
     .orders-list { display: grid; gap: 20px; }
+
+    .orders-pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 24px;
+    }
+
+    .orders-pagination nav > div:first-child { display: none; }
+    .orders-pagination nav > div:last-child { display: flex; gap: 6px; align-items: center; }
+    .orders-pagination a,
+    .orders-pagination span {
+        display: inline-flex;
+        min-width: 36px;
+        height: 36px;
+        align-items: center;
+        justify-content: center;
+        padding: 0 10px;
+        border: 1px solid #E5E7EB;
+        border-radius: 9px;
+        background: white;
+        color: #6B7280;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .orders-pagination a:hover {
+        border-color: #F28C28;
+        color: #D97706;
+    }
+
+    .orders-pagination span[aria-current="page"] {
+        border-color: #F28C28;
+        background: #F28C28;
+        color: white;
+    }
 
     /* ---------- ORDER CARD ---------- */
 
@@ -410,10 +481,123 @@
     .js .od-reveal { opacity: 0; transform: translateY(22px); transition: opacity .6s ease, transform .6s ease; }
     .js .od-reveal.visible { opacity: 1; transform: none; }
 
+    /* ---------- COMPACT ORDER CARDS ---------- */
+
+    .orders-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        align-items: stretch;
+    }
+
+    .order-card {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(32,42,53,0.045);
+    }
+
+    .order-top {
+        min-height: 58px;
+        padding: 13px 18px;
+    }
+
+    .order-number { font-size: 12px; }
+    .order-number .order-id-icon { width: 25px; height: 25px; font-size: 11px; }
+    .order-status { padding: 6px 11px; font-size: 11px; }
+
+    .order-vehicle {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        padding: 15px 18px 10px;
+    }
+
+    .order-vehicle h2 {
+        font-size: 17px;
+        margin: 0;
+    }
+
+    .order-vehicle p { font-size: 12px; }
+
+    .order-details {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        padding: 8px 18px 14px;
+    }
+
+    .detail-item {
+        padding: 10px 11px;
+        border-radius: 10px;
+    }
+
+    .detail-label {
+        gap: 4px;
+        margin-bottom: 4px;
+        font-size: 10px;
+    }
+
+    .detail-label .detail-icon {
+        width: 17px;
+        height: 17px;
+        font-size: 9px;
+    }
+
+    .detail-value { font-size: 12px; }
+
+    .order-total {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 0 18px;
+        padding: 12px 15px;
+        border-radius: 11px;
+    }
+
+    .order-total .detail-label { margin: 0; font-size: 11px; }
+    .order-total .detail-value { font-size: 17px; }
+
+    .order-payment {
+        margin: 10px 18px 0;
+        padding: 12px 15px;
+        border-radius: 11px;
+    }
+
+    .order-payment h3 { margin-bottom: 5px; font-size: 12px; }
+    .payment-info { display: inline; margin: 0 !important; font-size: 11px; }
+    .payment-info + .payment-info::before { content: '  •  '; color: #CBD5E1; }
+
+    .order-payment .order-actions {
+        gap: 7px;
+        padding-top: 8px !important;
+    }
+
+    .order-payment,
+    .order-total,
+    .order-actions { flex-shrink: 0; }
+
+    .order-actions { gap: 7px; padding: 11px 18px; }
+    .order-actions select,
+    .order-actions button { padding: 9px 12px; font-size: 11px; }
+
+    .order-card .btn-cancel { padding: 8px 12px; }
+
     /* ---------- RESPONSIVE ---------- */
+
+    @media(max-width: 900px) {
+        .orders-list { grid-template-columns: 1fr; }
+    }
 
     @media(max-width: 650px) {
         .orders-heading h1 { font-size: 22px; }
+
+        .orders-summary {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 10px;
+        }
 
         .order-top,
         .order-vehicle,
@@ -474,6 +658,15 @@
     @endif
 
     {{-- ========== ORDERS ========== --}}
+
+    @if($orders->isNotEmpty())
+        <div class="orders-summary od-reveal">
+            <div>
+                <strong>Riwayat pesanan</strong>
+                <span>{{ $orders->count() }} pesanan tersimpan</span>
+            </div>
+        </div>
+    @endif
 
     <div class="orders-list">
 

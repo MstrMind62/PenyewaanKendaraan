@@ -108,7 +108,15 @@ class SupirController extends Controller
     public function updateTaskStatus(Request $request, Pemesanan $p)
     {
         $sopir = $this->authenticatedDriver();
+        abort_if($sopir->status === 'nonaktif', 403, 'Akun supir tidak aktif.');
         $this->ensureAssignedTo($p, $sopir);
+        $p->load('pembayaran');
+
+        if (($p->pembayaran->status_pembayaran ?? null) !== 'Dibayar') {
+            return back()->withErrors([
+                'status' => 'Tugas belum dapat dijalankan karena pembayaran belum dikonfirmasi.',
+            ]);
+        }
 
         $data = $request->validate([
             'status' => ['required', 'in:Dalam Perjalanan,Selesai'],

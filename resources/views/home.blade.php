@@ -1301,7 +1301,7 @@
                 <small>Estimasi total</small>
                 <div class="estimator-total" id="estTotal">Rp0</div>
                 <p class="estimator-note">Perkiraan berdasarkan harga sewa per hari.</p>
-                <a href="#" class="btn" id="estLink">
+                <a href="{{ route('armada.index') }}" class="btn" id="estLink">
                     {{ session('role') === 'customer' ? 'Pesan Kendaraan Ini' : 'Lihat Kendaraan' }}
                 </a>
             </div>

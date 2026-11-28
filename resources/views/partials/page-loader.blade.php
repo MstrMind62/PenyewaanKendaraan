@@ -12,13 +12,13 @@
         transform-origin: left;
         opacity: 0;
         pointer-events: none;
-        transition: transform .35s ease, opacity .2s ease;
+        transition: transform .20s ease, opacity .2s ease;
     }
 
     .de-top-progress.active {
         opacity: 1;
         transform: scaleX(0.78);
-        transition: transform 2.2s cubic-bezier(.15,.6,.3,1), opacity .15s ease;
+        transition: transform .20s ease-out, opacity .15s ease;
     }
 
     .de-top-progress.done {
@@ -64,9 +64,10 @@
 
     function startTopBar() {
         if (!bar) return;
-        bar.classList.remove('done');
-        void bar.offsetWidth;
-        bar.classList.add('active');
+        bar.classList.remove('done', 'active');
+        requestAnimationFrame(function () {
+            bar.classList.add('active');
+        });
     }
 
     function setButtonLoading(el, labelText) {
@@ -118,6 +119,7 @@
         var href = link.getAttribute('href');
         if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
         if (link.target === '_blank' || link.hasAttribute('download')) return;
+        if (link.origin !== window.location.origin) return;
 
         startTopBar();
         setButtonLoading(link);
